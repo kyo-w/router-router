@@ -17,7 +17,10 @@ public class Spring implements Handle {
     static {
         className.add("org.springframework.web.servlet.handler.AbstractHandlerMethodMapping$MappingRegistry");
 //        唯一路由
+//        spring-webmvc:5.2.x
         routerMethod.add("getMappings");
+//        spring-webmvc:5.3.x
+        routerMethod.add("getMappingsByDirectPath");
     }
 
     @Override
@@ -43,32 +46,80 @@ public class Spring implements Handle {
      * @param map
      */
     private void handleEvent(MethodEntryEvent event, HashMap<String, String> map) {
-        Field mappingLookupField = null;
-        ObjectReference mappingLookup = null;
-        Value stringValue = null;
+        String methodName = event.method().name();
+//        spring-webmvc:5.2.x
+        if (methodName.equals("getMappings")) {
+            Field mappingLookupField = null;
+            List<Method> toString = null;
+            Value stringValue = null;
+            ObjectReference objectReference = null;
+            try {
+                mappingLookupField = event.thread().frame(0).thisObject().referenceType().fieldByName("mappingLookup");
+                objectReference = (ObjectReference) event.thread().frame(0).thisObject().getValue(mappingLookupField);
+            } catch (IncompatibleThreadStateException e) {
+                e.printStackTrace();
+            }
+            toString = objectReference.referenceType().methodsByName("toString", "()Ljava/lang/String;");
+            try {
+                stringValue = objectReference.invokeMethod(((MethodEntryEvent) event).thread(), toString.get(0), Collections.emptyList(), 0);
+            } catch (InvalidTypeException e) {
+                e.printStackTrace();
+            } catch (ClassNotLoadedException e) {
+                e.printStackTrace();
+            } catch (IncompatibleThreadStateException e) {
+                e.printStackTrace();
+            } catch (InvocationException e) {
+                e.printStackTrace();
+            }
+            convertMap(stringValue.toString());
+        } else if (methodName.equals("getMappingsByDirectPath")) {
+//            spring-webmvc:5.3.x
+            Field registry = null;
+            ObjectReference registryTable = null;
+            ObjectReference pathLookupObject = null;
+            try {
+                registry = event.thread().frame(0).thisObject().referenceType().fieldByName("registry");
+                Field pathLookup = event.thread().frame(0).thisObject().referenceType().fieldByName("pathLookup");
+                registryTable = (ObjectReference) event.thread().frame(0).thisObject().getValue(registry);
+                pathLookupObject = (ObjectReference) event.thread().frame(0).thisObject().getValue(pathLookup);
+                handleSpring53(event, pathLookupObject, registryTable);
 
-//        获取Spring MappingRegistry
-        try {
-            mappingLookupField = event.thread().frame(0).thisObject().referenceType().fieldByName("mappingLookup");
-            mappingLookup = (ObjectReference) event.thread().frame(0).thisObject().getValue(mappingLookupField);
-        } catch (IncompatibleThreadStateException e) {
-            e.printStackTrace();
+            } catch (IncompatibleThreadStateException e) {
+                e.printStackTrace();
+            } catch (ClassNotLoadedException e) {
+                e.printStackTrace();
+            } catch (InvocationException e) {
+                e.printStackTrace();
+            } catch (InvalidTypeException e) {
+                e.printStackTrace();
+            }
         }
+    }
 
-        List<Method> toString = mappingLookup.referenceType().methodsByName("toString", "()Ljava/lang/String;");
-        try {
-            stringValue = mappingLookup.invokeMethod(((MethodEntryEvent) event).thread(), toString.get(0), Collections.emptyList(), 0);
-        } catch (InvalidTypeException e) {
-            e.printStackTrace();
-        } catch (ClassNotLoadedException e) {
-            e.printStackTrace();
-        } catch (IncompatibleThreadStateException e) {
-            e.printStackTrace();
-        } catch (InvocationException e) {
-            e.printStackTrace();
+    public void handleSpring53(MethodEntryEvent event, ObjectReference pathObject, ObjectReference registryTable) throws InvocationException, InvalidTypeException, ClassNotLoadedException, IncompatibleThreadStateException {
+        List<Method> values = registryTable.referenceType().methodsByName("values");
+        ArrayReference arrayReference = null;
+        ObjectReference value = (ObjectReference) registryTable.invokeMethod(event.thread(), values.get(0), Collections.EMPTY_LIST, 0);
+        List<Method> toArray = value.referenceType().methodsByName("toArray");
+        arrayReference = (ArrayReference) value.invokeMethod(event.thread(), toArray.get(0), Collections.EMPTY_LIST, 0);
+        for (Value objectReference : arrayReference.getValues()) {
+            Field mapping = ((ObjectReference) objectReference).referenceType().fieldByName("mapping");
+            ObjectReference mappingObject = (ObjectReference) ((ObjectReference) objectReference).getValue(mapping);
+            Field pathPatternsCondition = mappingObject.referenceType().fieldByName("pathPatternsCondition");
+            ObjectReference pathPatternsConditionObject = (ObjectReference) mappingObject.getValue(pathPatternsCondition);
+            Field patterns = pathPatternsConditionObject.referenceType().fieldByName("patterns");
+            ObjectReference patternsObject = (ObjectReference) pathPatternsConditionObject.getValue(patterns);
+            List<Method> first = patternsObject.referenceType().methodsByName("first");
+            ObjectReference patternObject = (ObjectReference) patternsObject.invokeMethod(event.thread(), first.get(0), Collections.EMPTY_LIST, 0);
+            Field patternString = patternObject.referenceType().fieldByName("patternString");
+            String url = patternObject.getValue(patternString).toString().replace("\"", "");
+
+            Field handlerMethod = ((ObjectReference) objectReference).referenceType().fieldByName("handlerMethod");
+            ObjectReference handlerMethodObject = (ObjectReference) ((ObjectReference) objectReference).getValue(handlerMethod);
+            Field description = handlerMethodObject.referenceType().fieldByName("description");
+            String className = handlerMethodObject.getValue(description).toString().replace("\"", "");
+            putMap(url, className);
         }
-        convertMap(stringValue.toString());
-
     }
 
 
@@ -77,7 +128,6 @@ public class Spring implements Handle {
         //处理为以下格式
         //   {api} = {className},
         String text = value.substring(2).substring(0, value.length() - 2) + ", ";
-        System.out.println(text);
         Pattern compile = Pattern.compile("\\{(.*?)\\}=(.*?), ");
         Matcher matcher = compile.matcher(text);
         while (matcher.find()) {
@@ -102,9 +152,9 @@ public class Spring implements Handle {
             } else {
                 map.put(prefix + url, className);
             }
-        }else{
+        } else {
 //            以springboot的形式存在或者直接HOOk/*
-            map.put(url,className);
+            map.put(url, className);
         }
     }
 

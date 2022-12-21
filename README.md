@@ -113,7 +113,7 @@ STATUS有以下状态:
 | ------ | ----------------------------------------------------- |
 | Spring | org.springframework.web.servlet.DispatcherServlet     |
 | Jersey | com.sun.jersey.spi.container.servlet.ServletContainer |
-| struts | org.apache.struts.config.impl.ModuleConfigImpl        |
+| struts | org.apache.struts.action.ActionServlet                |
 
 
 
