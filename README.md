@@ -22,7 +22,7 @@
 
 ### 设置参数
 
-![image-20230316144625417](https://github.com/Kyo-w/router-killer/tree/main/img/1.png)
+![image-20230316144625417](img/1.png)
 
 **地址/端口**：参数为debug调试的数据
 
@@ -32,7 +32,7 @@
 
 ### 连接分析
 
-![image-20230316145050920](https://github.com/Kyo-w/router-killer/tree/main/img/2.png)
+![image-20230316145050920](img/2.png)
 
 目标网站的参数会被内部用于自动分析，已经不再需要自己触发调试条件
 
