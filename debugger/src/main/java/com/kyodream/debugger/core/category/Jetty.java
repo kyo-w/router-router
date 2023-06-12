@@ -79,18 +79,34 @@ public class Jetty extends AbstractDataWrapper {
         String contextPath = JettyFormat.doubleDot(rawContextPath);
         ObjectReference servletHandler = Utils.getFieldObject(handler, "_servletHandler");
         ArrayReference servletMappings = (ArrayReference) Utils.getFieldObject(servletHandler, "_servletMappings");
-        handlerServletMappingObject(servletMappings, prefix + contextPath);
+        HashMap<String, String> servletAliasName = getServletAliasName(servletHandler);
+        handlerServletMappingObject(servletMappings, prefix + contextPath, servletAliasName);
     }
 
     private void handlerServletContext(ObjectReference handler, String prefix) {
         ObjectReference servletHandler = Utils.getFieldObject(handler, "_servletHandler");
         ArrayReference servletMappings = (ArrayReference) Utils.getFieldObject(servletHandler, "_servletMappings");
-        handlerServletMappingObject(servletMappings, prefix);
+        HashMap<String, String> servletAliasName = getServletAliasName(servletHandler);
+        handlerServletMappingObject(servletMappings, prefix, servletAliasName);
     }
 
-    private void handlerServletMappingObject(ArrayReference servletMappings, String prefix) {
+    private HashMap<String, String> getServletAliasName(ObjectReference servletHandler) {
+        HashMap<String, String> result = new HashMap<>();
+        ArrayReference servlets = (ArrayReference) Utils.getFieldObject(servletHandler, "_servlets");
+        for (Value servlet : servlets.getValues()) {
+            ObjectReference servletObject = (ObjectReference) servlet;
+            StringReference name = (StringReference) Utils.getFieldObject(servletObject, "_name");
+            StringReference className = (StringReference) Utils.getFieldObject(servletObject, "_className");
+            result.put(name.value(), className.value());
+        }
+        return result;
+    }
+
+    private void handlerServletMappingObject(ArrayReference servletMappings, String prefix, HashMap<String, String> classNameMapping) {
+
         for (Value servletMapping : servletMappings.getValues()) {
-            String className = ((StringReference) Utils.getFieldObject((ObjectReference) servletMapping, "_servletName")).value();
+            String classNameMap = ((StringReference) Utils.getFieldObject((ObjectReference) servletMapping, "_servletName")).value();
+            String className = classNameMapping.get(classNameMap);
             ArrayReference pathSpecs = (ArrayReference) Utils.getFieldObject((ObjectReference) servletMapping, "_pathSpecs");
             for (Value pathSpec : pathSpecs.getValues()) {
                 String rawResult = ((StringReference) pathSpec).value();
