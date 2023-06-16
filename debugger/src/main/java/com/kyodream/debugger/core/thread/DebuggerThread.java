@@ -38,11 +38,6 @@ public class DebuggerThread implements Runnable {
         this.debuggerArgs = debuggerArgs;
         this.webSocket = debugWebSocket;
         this.debugManger = debugManger;
-    }
-
-    @Override
-    public void run() {
-        log.info("创建新线程");
         SocketAttachingConnector socketAttachingConnector = new SocketAttachingConnector();
         Map<String, Connector.Argument> argumentHashMap = socketAttachingConnector.defaultArguments();
         argumentHashMap.get("hostname").setValue(debuggerArgs.getHostname());
@@ -58,10 +53,16 @@ public class DebuggerThread implements Runnable {
         }
         if (attach == null) {
             return;
+        }else{
+            this.vm = attach;
         }
         log.info("连接成功");
+    }
+
+    @Override
+    public void run() {
+        log.info("创建新线程");
         debugManger.setDebuggerThread(this);
-        this.vm = attach;
 //        遍历内存Class对象
         webSocket.sendInfo("扫描内存对象中...");
         scannerMemory();
@@ -73,7 +74,7 @@ public class DebuggerThread implements Runnable {
         webSocket.sendInfo("动态等待调试信息，实时更新内存变化");
         EventQueue eventQueue = vm.eventQueue();
         EventSet events = null;
-        while (true && !stopFlag) {
+        while (true) {
             try {
                 if (!((events = eventQueue.remove()) != null)) {
                     continue;
@@ -81,8 +82,12 @@ public class DebuggerThread implements Runnable {
             } catch (InterruptedException e) {
                 webSocket.sendFail("等待断点异常");
             }
-            scannerMemory();
-            handleEvent(events);
+            if(!stopFlag){
+                scannerMemory();
+                handleEvent(events);
+            }else{
+                vm.resume();
+            }
         }
     }
 
@@ -134,7 +139,31 @@ public class DebuggerThread implements Runnable {
         }
     }
 
+    public void stopAnalysts(){
+        List<MethodEntryRequest> methodEntryRequests = vm.eventRequestManager().methodEntryRequests();
+        vm.eventRequestManager().deleteEventRequests(methodEntryRequests);
+        this.stopFlag = true;
+    }
+
+    public void startAnalysts(){
+        setFilterClass();
+        this.stopFlag = false;
+    }
+
+    public boolean getAnalystStatus(){
+        return this.stopFlag;
+    }
+
+    public boolean connectSuccess(){
+        if(this.vm != null){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
     public void stopDebug() {
+        this.vm.resume();
         this.vm.dispose();
     }
 }

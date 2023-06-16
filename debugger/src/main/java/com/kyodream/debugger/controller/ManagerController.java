@@ -44,10 +44,35 @@ public class ManagerController {
             return Constant.connectRepeat;
         }
         DebuggerThread debuggerThread = new DebuggerThread(bugManger.getDebuggerArgs(), debugWebSocket, bugManger);
-        Thread thread = new Thread(debuggerThread);
-        thread.setDaemon(true);
-        thread.start();
+        if(debuggerThread.connectSuccess()) {
+            Thread thread = new Thread(debuggerThread);
+            thread.setDaemon(true);
+            thread.start();
+            return new ApiResponse(200, "操作完成");
+        }else{
+            return new ApiResponse(400, "连接失败");
+        }
+    }
+
+    @GetMapping("/analyst/stop")
+    public ApiResponse stopAnalysts() {
+        bugManger.getDebuggerThread().stopAnalysts();
         return new ApiResponse(200, "操作完成");
+    }
+
+    @GetMapping("/analyst/start")
+    public ApiResponse startAnalysts(){
+        bugManger.getDebuggerThread().startAnalysts();
+        return new ApiResponse(200, "操作完成");
+    }
+
+    @GetMapping("/analyst/status")
+    public ApiResponse getAnalystStatus(){
+        if(bugManger.getDebuggerThread() == null){
+            return new ApiResponse(200, true);
+        }
+        boolean analystStatus = bugManger.getDebuggerThread().getAnalystStatus();
+        return new ApiResponse(200, analystStatus);
     }
 
     @GetMapping("/clean")

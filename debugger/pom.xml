@@ -48,6 +48,20 @@
             <artifactId>poi</artifactId>
             <version>3.6</version>
         </dependency>
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>jdk8</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/lib/jdk8.jar</systemPath>
+        </dependency>
+        <dependency>
+            <groupId>javassist</groupId>
+            <artifactId>jdk11</artifactId>
+            <version>1.0.0</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/src/main/resources/lib/jdk11.jar</systemPath>
+        </dependency>
     </dependencies>
 
     <build>
@@ -56,6 +70,7 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
+                    <includeSystemScope>true</includeSystemScope>
                 </configuration>
             </plugin>
             <plugin>

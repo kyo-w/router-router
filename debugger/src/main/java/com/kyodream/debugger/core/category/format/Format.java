@@ -5,7 +5,9 @@ public class Format {
         return url.replace("\"", "");
     }
 
-    public static String doubleSlash(String url){
-        return url.replace("\\\\", "/").replace("//", "/");
+    public static String doubleSlash(String str){
+        String replaceAll = str.replaceAll("/+", "/");
+        String result = replaceAll.replaceAll("\\+", "/");
+        return result;
     }
 }

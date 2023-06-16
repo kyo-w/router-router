@@ -30,13 +30,15 @@ public class Tomcat extends AbstractDataWrapper {
     private Jersey jersey;
     @Autowired
     private Struts struts;
-    private HashMap<String, String> exactWrappersMap = new HashMap<>();
-    private HashMap<String, String> wildcardWrappersMap = new HashMap<>();
-    private HashMap<String, String> extensionWrappersMap = new HashMap<>();
-    private HashMap<String, String> defaultMap = new HashMap<>();
+    private static HashMap<String, String> exactWrappersMap = new HashMap<>();
+    private static HashMap<String, String> wildcardWrappersMap = new HashMap<>();
+    private static HashMap<String, String> extensionWrappersMap = new HashMap<>();
+    private static HashMap<String, String> defaultMap = new HashMap<>();
     private String version;
 
+
     private Set<ObjectReference> tomcatObjects = new HashSet<>();
+    private VirtualMachine vm;
 
     @Autowired
     private DebugWebSocket debugWebSocket;
@@ -49,6 +51,7 @@ public class Tomcat extends AbstractDataWrapper {
 
     @Override
     public void analystsObject(VirtualMachine attach) {
+        this.vm = attach;
         handleVersion(attach);
         hasFind();
         debugWebSocket.sendInfo("开始分析tomcat");
@@ -61,6 +64,9 @@ public class Tomcat extends AbstractDataWrapper {
                     e.printStackTrace();
                     debugWebSocket.sendFail("分析tomcat出现异常错误");
                 }
+                if (struts.getStrutsVersion() == 2) {
+                    handleStruts2_98(tomcatObject);
+                }
             } else if (tomcatObject.referenceType().name().equals("org.apache.tomcat.util.http.mapper.Mapper")) {
                 debugWebSocket.sendSuccess("获取Mapper,当前tomcat版本为7/6");
                 try {
@@ -69,12 +75,53 @@ public class Tomcat extends AbstractDataWrapper {
                     e.printStackTrace();
                     debugWebSocket.sendFail("分析tomcat出现异常错误");
                 }
+                if (struts.getStrutsVersion() == 2) {
+//                    handleStruts2_76();
+                }
             }
             if (jersey.isFind()) {
                 jersey.analystsObject(attach);
             }
         }
         debugWebSocket.sendInfo("结束分析tomcat");
+
+    }
+
+    private void handleStruts2_98(ObjectReference tomcatObject) {
+        Field contextObjectToContextVersionMap = null;
+        ObjectReference containList = null;
+        contextObjectToContextVersionMap = tomcatObject.referenceType().fieldByName("contextObjectToContextVersionMap");
+        containList = (ObjectReference) tomcatObject.getValue(contextObjectToContextVersionMap);
+        Map<ObjectReference, ObjectReference> hashMapObject = MapAnalyse.getConcurrentHashMapObject(containList);
+        hashMapObject.forEach((ObjectReference key, ObjectReference value) -> {
+            ObjectReference filterConfigs = Utils.getFieldObject(key, "filterConfigs");
+            Map<ObjectReference, ObjectReference> filterConfigsObject = MapAnalyse.getHashMapObject(filterConfigs);
+            String[] classNameAlias = new String[]{""};
+            filterConfigsObject.forEach((ObjectReference filterKey, ObjectReference filterValue) -> {
+                ObjectReference filterDef = Utils.getFieldObject(filterValue, "filterDef");
+                StringReference filterClassName = (StringReference) Utils.getFieldObject(filterDef, "filterClass");
+                if (filterClassName.value().equals("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter")) {
+//                    struts2.2/2.3
+                    classNameAlias[0] = ((StringReference) filterKey).value();
+                }else if(filterClassName.value().equals("org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter")){
+//                    struts2.5
+                    classNameAlias[0] = ((StringReference) filterKey).value();
+                }
+            });
+
+            ObjectReference filterMaps = Utils.getFieldObject(key, "filterMaps");
+            ArrayReference array = (ArrayReference) Utils.getFieldObject(filterMaps, "array");
+            array.getValues().stream().forEach((Object filterMapObject)->{
+                ObjectReference filterMapObjectRef = (ObjectReference) filterMapObject;
+                StringReference filterName = (StringReference) Utils.getFieldObject(filterMapObjectRef, "filterName");
+                if(filterName.value().equals(classNameAlias[0])){
+                    ArrayReference urlPatterns = (ArrayReference) Utils.getFieldObject(filterMapObjectRef, "urlPatterns");
+                    StringReference urlStringObject = (StringReference) urlPatterns.getValue(0);
+                    struts.registryPrefix(urlStringObject.value());
+                    struts.analystsObject(vm);
+                }
+            });
+        });
     }
 
     private void handleTomcat98(ObjectReference tomcatObject) {
@@ -86,8 +133,6 @@ public class Tomcat extends AbstractDataWrapper {
         Iterator<Map.Entry<ObjectReference, ObjectReference>> iterator = hashMapObject.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<ObjectReference, ObjectReference> next = iterator.next();
-//            struts.handleStruts(threadReference, next.getKey());
-
             ObjectReference value = next.getValue();
             Field path = value.referenceType().fieldByName("path");
             String prefix = ((StringReference) value.getValue(path)).value();
@@ -152,6 +197,15 @@ public class Tomcat extends AbstractDataWrapper {
             String servletClass = ((StringReference) Utils.getFieldObject(object, "servletClass")).value();
             if (jersey.getDiscoveryClass().contains(servletClass)) {
                 jersey.registryPrefix(prefix + url);
+            }
+            if (servletClass.equals("org.apache.struts.action.ActionServlet")) {
+                if(!url.startsWith("/")){
+                    struts.registryPrefix(prefix + "*." + url);
+
+                }else{
+                    struts.registryPrefix(prefix + url + "/*");
+                }
+                struts.analystsObject(this.vm);
             }
             originMap.put(prefix + url, servletClass);
         }
