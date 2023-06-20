@@ -2,9 +2,6 @@ package com.kyodream.debugger.core.analyse;
 
 import com.sun.jdi.*;
 
-import java.util.ArrayList;
-import java.util.Collections;
-
 public class Utils {
     /**
      * get field object of Target Object

@@ -2,13 +2,7 @@ import request from "./request";
 
 export function connectDebugApi(){
   return request({
-    url: "/mg/connect/run",
-    method: 'get'
-  })
-}
-export function analyStatusApi(){
-  return request({
-    url: '/mg/analyst/status',
+    url: "/mg/connect",
     method: 'get'
   })
 }
@@ -20,12 +14,6 @@ export function cleanDataApi(){
   })
 }
 
-export function stopConnectApi(){
-  return request({
-    url: '/mg/stop',
-    method: 'get'
-  })
-}
 
 export function connectStatusApi(){
   return request({
@@ -34,16 +22,9 @@ export function connectStatusApi(){
   })
 }
 
-export function analystsStop(){
+export function analystApi(){
   return request({
-    url: "/mg/analyst/stop",
-    method: 'get'
-  })
-}
-
-export function analystsStart(){
-  return request({
-    url: "/mg/analyst/start",
+    url: "/mg/run",
     method: 'get'
   })
 }

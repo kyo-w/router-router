@@ -1,9 +1,5 @@
 package com.kyodream.debugger.core.category;
 
-import com.kyodream.debugger.service.DebugWebSocket;
-import com.sun.jdi.ThreadReference;
-import com.sun.jdi.VirtualMachine;
-
 import java.util.HashMap;
 
 public interface DataWrapper {

@@ -19,11 +19,11 @@ import java.util.*;
 @Component
 @Slf4j
 public class Tomcat extends AbstractDataWrapper {
-    private static Set<String> filterClass = new HashSet<>();
+    private static Set<String> discoveryClass = new HashSet<>();
 
     static {
-        filterClass.add("org.apache.catalina.mapper.Mapper");
-        filterClass.add("org.apache.tomcat.util.http.mapper.Mapper");
+        discoveryClass.add("org.apache.catalina.mapper.Mapper");
+        discoveryClass.add("org.apache.tomcat.util.http.mapper.Mapper");
     }
 
     @Autowired
@@ -246,7 +246,7 @@ public class Tomcat extends AbstractDataWrapper {
 
     @Override
     public Set<String> getDiscoveryClass() {
-        return filterClass;
+        return discoveryClass;
     }
 
     private void handleVersion(VirtualMachine attach) {

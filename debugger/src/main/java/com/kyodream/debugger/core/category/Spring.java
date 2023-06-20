@@ -22,10 +22,10 @@ import java.util.*;
 @Component
 public class Spring extends AbstractDataWrapper {
 
-    private static Set<String> filterClass = new HashSet<>();
+    private static Set<String> discoveryClass = new HashSet<>();
 
     static {
-        filterClass.add("org.springframework.web.servlet.DispatcherServlet");
+        discoveryClass.add("org.springframework.web.servlet.DispatcherServlet");
     }
 
     //    支持的注解
@@ -35,7 +35,6 @@ public class Spring extends AbstractDataWrapper {
     private HashMap<String, String> beanNameUrlHandlerMapping = new HashMap<>();
     //    Implementation Controller interface, configuration the simpleUrlHandlerMapping
     private HashMap<String, String> simpleUrlHandlerMapping = new HashMap<>();
-    private ThreadReference threadReference = null;
     private String prefix = "";
     private String version = "";
     private Set<ObjectReference> springObjects = new HashSet<>();
@@ -201,6 +200,7 @@ public class Spring extends AbstractDataWrapper {
         result.putAll(requestMappingHandlerMapping);
         result.putAll(beanNameUrlHandlerMapping);
         result.putAll(simpleUrlHandlerMapping);
+        springObjects = new HashSet<>();
         return result;
     }
 
@@ -215,14 +215,13 @@ public class Spring extends AbstractDataWrapper {
         this.requestMappingHandlerMapping = new HashMap<>();
         this.beanNameUrlHandlerMapping = new HashMap<>();
         this.simpleUrlHandlerMapping = new HashMap<>();
-        this.threadReference = null;
         this.prefix = "";
         this.version = "";
     }
 
     @Override
     public Set<String> getDiscoveryClass() {
-        return filterClass;
+        return discoveryClass;
     }
 
     private void handleVersion(VirtualMachine attach) {

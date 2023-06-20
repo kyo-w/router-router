@@ -67,14 +67,14 @@ public class DataController {
 
     @GetMapping("/exist/{target}")
     public ApiResponse existTarget(@PathVariable("target") String target) {
-        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllData();
+        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllDataWrapper();
         AbstractDataWrapper abstractDataWrapper = allDataStatus.get(target);
         return new ApiResponse(200, abstractDataWrapper.isFind());
     }
 
     @GetMapping("/version/{target}")
     public ApiResponse getVersion(@PathVariable("target") String target) {
-        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllData();
+        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllDataWrapper();
         AbstractDataWrapper abstractDataWrapper = allDataStatus.get(target);
         return new ApiResponse(200, abstractDataWrapper.getVersion());
     }
@@ -98,7 +98,7 @@ public class DataController {
 
     @GetMapping("/existtarget")
     public ApiResponse getExistTarget() {
-        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllData();
+        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllDataWrapper();
         HashMap<String, Boolean> stringBooleanHashMap = new HashMap<>();
         Iterator<Map.Entry<String, AbstractDataWrapper>> iterator = allDataStatus.entrySet().iterator();
         while (iterator.hasNext()) {
@@ -114,13 +114,7 @@ public class DataController {
     @GetMapping("/export/{target}")
     public void exportData(HttpServletResponse response, @PathVariable("target") String middle) {
         if (middle.equals("all")) {
-            ExportUtils.exportAllData(bugManger.getAllData(), response);
+            ExportUtils.exportAllData(bugManger.getAllDataWrapper(), response);
         }
     }
-
-//    @GetMapping("/struts/module")
-//    public ApiResponse StrutsMouleName() {
-//        String modulePatternName = struts.getModulePatternName();
-//        return new ApiResponse(200, modulePatternName);
-//    }
 }

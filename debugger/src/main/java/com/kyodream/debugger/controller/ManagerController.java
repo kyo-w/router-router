@@ -1,22 +1,13 @@
 package com.kyodream.debugger.controller;
 
 import com.kyodream.debugger.core.DebugManger;
-import com.kyodream.debugger.core.category.AbstractDataWrapper;
-import com.kyodream.debugger.core.thread.DebuggerThread;
-import com.kyodream.debugger.service.DebugWebSocket;
 import com.kyodream.debugger.utils.ApiResponse;
 import com.kyodream.debugger.utils.Constant;
-import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
 
 @Slf4j
 @RestController
@@ -26,53 +17,34 @@ public class ManagerController {
     @Autowired
     private DebugManger bugManger;
 
-    @Autowired
-    private DebugWebSocket debugWebSocket;
-
     @GetMapping("/exist")
     public ApiResponse connectExist() {
-        if (bugManger.getDebuggerThread() != null) {
+        if (bugManger.existConnect()) {
             return Constant.connectExist;
         } else {
             return Constant.connectNoExist;
         }
     }
 
-    @GetMapping("/connect/run")
-    public ApiResponse connnecTarget() {
-        if (bugManger.getDebuggerThread() != null) {
+    @GetMapping("/connect")
+    public ApiResponse connectTarget() {
+        if (bugManger.existConnect()) {
             return Constant.connectRepeat;
         }
-        DebuggerThread debuggerThread = new DebuggerThread(bugManger.getDebuggerArgs(), debugWebSocket, bugManger);
-        if(debuggerThread.connectSuccess()) {
-            Thread thread = new Thread(debuggerThread);
-            thread.setDaemon(true);
-            thread.start();
-            return new ApiResponse(200, "操作完成");
-        }else{
+        if (bugManger.connectRemoteJVM()) {
+            return new ApiResponse(200, "连接成功");
+        } else {
             return new ApiResponse(400, "连接失败");
         }
     }
 
-    @GetMapping("/analyst/stop")
-    public ApiResponse stopAnalysts() {
-        bugManger.getDebuggerThread().stopAnalysts();
-        return new ApiResponse(200, "操作完成");
-    }
-
-    @GetMapping("/analyst/start")
-    public ApiResponse startAnalysts(){
-        bugManger.getDebuggerThread().startAnalysts();
-        return new ApiResponse(200, "操作完成");
-    }
-
-    @GetMapping("/analyst/status")
-    public ApiResponse getAnalystStatus(){
-        if(bugManger.getDebuggerThread() == null){
-            return new ApiResponse(200, true);
+    @GetMapping("/run")
+    public ApiResponse analysts() {
+        if (bugManger.startAnalysts()) {
+            return new ApiResponse(200, "操作完成");
+        } else {
+            return new ApiResponse(200, "已存在分析线程");
         }
-        boolean analystStatus = bugManger.getDebuggerThread().getAnalystStatus();
-        return new ApiResponse(200, analystStatus);
     }
 
     @GetMapping("/clean")

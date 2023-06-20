@@ -3,9 +3,7 @@ package com.kyodream.debugger.core.analyse;
 import com.sun.jdi.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Objects;
 
 public class SetAnalyse {
     private static HashSet<ObjectReference> internalHashMap(ObjectReference mapObject) {

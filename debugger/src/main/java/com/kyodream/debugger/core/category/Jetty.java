@@ -19,13 +19,10 @@ import java.util.*;
 @Component
 @Slf4j
 public class Jetty extends AbstractDataWrapper {
-    private static Set<String> filterClass = new HashSet<>();
-
     private static Set<String> discoveryClass = new HashSet<>();
     private static Set<String> blackList = new HashSet<String>();
 
     static {
-        filterClass.add("org.eclipse.jetty.server.HttpChannel");
         discoveryClass.add("org.eclipse.jetty.webapp.WebAppContext");
         discoveryClass.add("org.eclipse.jetty.servlet.ServletContextHandler");
         blackList.add("org.eclipse.jetty.servlet.NoJspServlet");

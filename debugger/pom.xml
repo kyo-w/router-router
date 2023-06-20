@@ -9,9 +9,9 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.kyodream</groupId>
-    <artifactId>router3</artifactId>
-    <version>1.1</version>
-    <name>router3</name>
+    <artifactId>router4</artifactId>
+    <version>1.0</version>
+    <name>router4</name>
     <description>debugger</description>
     <properties>
         <java.version>11</java.version>

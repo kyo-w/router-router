@@ -26,22 +26,12 @@
               style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
               :before-change="beforeChange1"
           />
-          <el-button type="primary" @click="connectDebug">连接分析</el-button>
+          <el-button type="primary" @click="connectDebug">连接</el-button>
+          <el-button type="primary" @click="analysts">扫描内存</el-button>
           <el-button type="primary" @click="settingConnectArg">设置</el-button>
           <el-button type="primary" @click="connectLogDrawer = true">连接日志</el-button>
-          <el-button type="primary" @click="startAnalysts">继续调试断点</el-button>
-          <el-switch
-              class="status"
-              v-model="debugStatus"
-              inline-prompt
-              active-text="调试中"
-              inactive-text="已停止调试"
-              style="--el-switch-on-color: #13ce66; --el-switch-off-color: #ff4949"
-              :before-change="beforeChange1"
-          />
           <hr/>
           <el-button type="danger" @click="emptyButton">未授权探测</el-button>
-          <el-button type="danger" @click="stopAnalysts">停止调试断点</el-button>
           <el-button type="danger" @click="cleanData">置空数据</el-button>
           <el-button type="danger" @click="exportData">一键导出(xls)</el-button>
         </el-card>
@@ -83,11 +73,10 @@ import {
   connectDebugApi,
   cleanDataApi,
   connectStatusApi,
-  analystsStop,
-  analystsStart,analyStatusApi
+  analystApi
 } from "../utils/manageApi";
 import {getArgApi} from "../utils/settingApi";
-import { getListDataApi, exportAllApi} from "../utils/dataApi";
+import {getListDataApi, exportAllApi} from "../utils/dataApi";
 
 import BugInfo from './BugInfo.vue';
 import Constant from "@/utils/constant";
@@ -107,7 +96,6 @@ export default {
       targets: reactive({
         list: []
       }),
-      debugStatus: false,
       dialogVisible: false,
       connectLogDrawer: false,
       logInfo: [],
@@ -122,11 +110,10 @@ export default {
       connectDebugApi().then(res => {
         if (res.data.code === 200) {
           this.statusFlag = true
-          this.debugStatus = true
           Message('消息', res.data.msg, 'info')
         } else if (res.data.code === 300) {
           Message('消息', res.data.msg, 'warning')
-        }else if(res.data.code === 400){
+        } else if (res.data.code === 400) {
           Message('消息', res.data.msg, 'error')
         }
       }).catch(err => {
@@ -193,20 +180,11 @@ export default {
         this.targets = lists;
       })
     },
-    stopAnalysts() {
-      analystsStop().then(res=>{
-        this.debugStatus = false
-        Message('信息', res.data.msg, 'info')
-      })
-    },
-    startAnalysts(){
-      if(!this.statusFlag){
-        Message('信息', '必须先连接成功!', 'warning')
-        return
-      }
-      analystsStart().then(res=>{
-        this.debugStatus = true
-        Message('信息', res.data.msg, 'info')
+    analysts() {
+      analystApi().then(res => {
+        this.logInfo = []
+        Message('消息', res.data.msg, 'info')
+        this.connectLogDrawer = true
       })
     }
   },
@@ -228,18 +206,6 @@ export default {
         this.statusFlag = true
       } else {
         this.statusFlag = false
-      }
-    })
-    connectStatusApi().then(res => {
-      if (res.data.code === 200) {
-        this.statusFlag = true
-      }
-    })
-    analyStatusApi().then(res=>{
-      if(res.data.msg === true){
-        this.debugStatus = false
-      }else{
-        this.debugStatus = true
       }
     })
   },
