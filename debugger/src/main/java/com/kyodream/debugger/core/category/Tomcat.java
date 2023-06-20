@@ -36,7 +36,6 @@ public class Tomcat extends AbstractDataWrapper {
     private static HashMap<String, String> defaultMap = new HashMap<>();
     private String version;
 
-
     private Set<ObjectReference> tomcatObjects = new HashSet<>();
     private VirtualMachine vm;
 
@@ -75,9 +74,6 @@ public class Tomcat extends AbstractDataWrapper {
                     e.printStackTrace();
                     debugWebSocket.sendFail("分析tomcat出现异常错误");
                 }
-                if (struts.getStrutsVersion() == 2) {
-//                    handleStruts2_76();
-                }
             }
             if (jersey.isFind()) {
                 jersey.analystsObject(attach);
@@ -103,7 +99,7 @@ public class Tomcat extends AbstractDataWrapper {
                 if (filterClassName.value().equals("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter")) {
 //                    struts2.2/2.3
                     classNameAlias[0] = ((StringReference) filterKey).value();
-                }else if(filterClassName.value().equals("org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter")){
+                } else if (filterClassName.value().equals("org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter")) {
 //                    struts2.5
                     classNameAlias[0] = ((StringReference) filterKey).value();
                 }
@@ -111,10 +107,10 @@ public class Tomcat extends AbstractDataWrapper {
 
             ObjectReference filterMaps = Utils.getFieldObject(key, "filterMaps");
             ArrayReference array = (ArrayReference) Utils.getFieldObject(filterMaps, "array");
-            array.getValues().stream().forEach((Object filterMapObject)->{
+            array.getValues().stream().forEach((Object filterMapObject) -> {
                 ObjectReference filterMapObjectRef = (ObjectReference) filterMapObject;
                 StringReference filterName = (StringReference) Utils.getFieldObject(filterMapObjectRef, "filterName");
-                if(filterName.value().equals(classNameAlias[0])){
+                if (filterName.value().equals(classNameAlias[0])) {
                     ArrayReference urlPatterns = (ArrayReference) Utils.getFieldObject(filterMapObjectRef, "urlPatterns");
                     StringReference urlStringObject = (StringReference) urlPatterns.getValue(0);
                     struts.registryPrefix(urlStringObject.value());
@@ -133,6 +129,7 @@ public class Tomcat extends AbstractDataWrapper {
         Iterator<Map.Entry<ObjectReference, ObjectReference>> iterator = hashMapObject.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<ObjectReference, ObjectReference> next = iterator.next();
+            ObjectReference key = next.getKey();
             ObjectReference value = next.getValue();
             Field path = value.referenceType().fieldByName("path");
             String prefix = ((StringReference) value.getValue(path)).value();
@@ -199,13 +196,13 @@ public class Tomcat extends AbstractDataWrapper {
                 jersey.registryPrefix(prefix + url);
             }
             if (servletClass.equals("org.apache.struts.action.ActionServlet")) {
-                if(!url.startsWith("/")){
+                if (!url.startsWith("/")) {
                     struts.registryPrefix(prefix + "*." + url);
 
-                }else{
+                } else {
                     struts.registryPrefix(prefix + url + "/*");
                 }
-                struts.analystsObject(this.vm);
+                struts.analystsObject(vm);
             }
             originMap.put(prefix + url, servletClass);
         }
@@ -214,10 +211,22 @@ public class Tomcat extends AbstractDataWrapper {
     @Override
     public HashMap<String, String> getDataWrapper() {
         HashMap<String, String> resultHashMap = new HashMap<>();
+        if(defaultMap == null){
+            defaultMap = new HashMap<>();
+        }
+        if(exactWrappersMap == null){
+            exactWrappersMap = new HashMap<>();
+        }
+        if(wildcardWrappersMap == null){
+            wildcardWrappersMap = new HashMap<>();
+        }
+        if(extensionWrappersMap == null){
+            extensionWrappersMap = new HashMap<>();
+        }
         resultHashMap.putAll(defaultMap);
         resultHashMap.putAll(exactWrappersMap);
         resultHashMap.putAll(wildcardWrappersMap);
-        resultHashMap.putAll(exactWrappersMap);
+        resultHashMap.putAll(extensionWrappersMap);
         return resultHashMap;
     }
 

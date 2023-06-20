@@ -14,6 +14,4 @@ public class ListAnalyse {
         ArrayReference elementDataObject = (ArrayReference) arrayListObject.getValue(elementData);
         return elementDataObject.getValues().stream().map(elem -> (ObjectReference) elem).collect(Collectors.toList());
     }
-
-
 }

@@ -65,6 +65,12 @@ public class DebuggerThread implements Runnable {
         debugManger.setDebuggerThread(this);
 //        遍历内存Class对象
         webSocket.sendInfo("扫描内存对象中...");
+        if(!vm.canGetInstanceInfo()){
+            webSocket.sendFail("目标不支持内存访问");
+            return;
+        }else{
+            webSocket.sendInfo("目标支持内存访问");
+        }
         scannerMemory();
         webSocket.sendInfo("完成扫描^-^");
 

@@ -23,9 +23,18 @@ public class MapAnalyse {
                 continue;
             }
             ObjectReference elemKvObject = (ObjectReference) elemKv;
-            ObjectReference keyObject = Utils.getFieldObject(elemKvObject, "key");
-            ObjectReference valueObject = Utils.getFieldObject(elemKvObject, "value");
-            result.put(keyObject, valueObject);
+            while (true) {
+                ObjectReference keyObject = Utils.getFieldObject(elemKvObject, "key");
+                ObjectReference valueObject = Utils.getFieldObject(elemKvObject, "value");
+//                某个节点可能链表的结构，需要判断是否存在next
+                ObjectReference next = Utils.getFieldObject(elemKvObject, "next");
+                result.put(keyObject, valueObject);
+                if(next != null){
+                    elemKvObject = next;
+                }else{
+                    break;
+                }
+            }
         }
         return result;
     }
