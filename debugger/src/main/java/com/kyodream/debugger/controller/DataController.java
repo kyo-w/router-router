@@ -26,7 +26,7 @@ public class DataController {
     private Jetty jetty;
 
     @Autowired
-    private Spring spring;
+    private SpringMvc spring;
 
     @Autowired
     private Jersey jersey;
@@ -54,16 +54,23 @@ public class DataController {
         }
     }
 
-//    @GetMapping("/exist")
-//    public ApiResponse exist() {
-//        AnalyseStatus analyseStatus = bugManger.analyseStatus();
-//        switch (analyseStatus) {
-//            case OK:
-//                return Constant.existData;
-//            default:
-//                return Constant.emptyData;
-//        }
-//    }
+    @GetMapping("/modify/spring")
+    public ApiResponse springModify() {
+        HashMap<String, AbstractDataWrapper> allDataWrapper = bugManger.getAllDataWrapper();
+        SpringMvc spring = (SpringMvc)allDataWrapper.get("spring");
+        if(spring.getModify()){
+            return new ApiResponse(200, true);
+        }else{
+            return new ApiResponse(200, false);
+        }
+    }
+
+    @GetMapping("/modify/spring/prefix")
+    public ApiResponse springPrefix() {
+        HashMap<String, AbstractDataWrapper> allDataWrapper = bugManger.getAllDataWrapper();
+        SpringMvc spring = (SpringMvc)allDataWrapper.get("spring");
+        return new ApiResponse(200, spring.getPrefix());
+    }
 
     @GetMapping("/exist/{target}")
     public ApiResponse existTarget(@PathVariable("target") String target) {

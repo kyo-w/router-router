@@ -1,7 +1,12 @@
 package com.kyodream.debugger.core.category;
 
+import com.kyodream.debugger.service.DebugWebSocket;
+import com.sun.jdi.Field;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.VirtualMachine;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
+
 import java.util.Set;
 
 /**
@@ -13,7 +18,13 @@ import java.util.Set;
  * 执行线程在处理完上述操作之后，会向目标JVM下断点，每一个AbstractDataWrapper都要提供
  * 一些类来给执行线程下断点。
  */
+@Component
 public abstract class AbstractDataWrapper implements DataWrapper {
+
+    public String handleOrPlugin = null;
+
+    @Autowired
+    DebugWebSocket debugWebSocket;
     private boolean isFind = false;
 
     @Override
@@ -36,6 +47,19 @@ public abstract class AbstractDataWrapper implements DataWrapper {
 
 
     public void analystsObject(VirtualMachine attach) {
+    }
+
+
+    abstract public void setHandleOrPlugin();
+    protected ObjectReference getFieldObject(ObjectReference objectReference, String fieldString) {
+        ObjectReference result = null;
+        try {
+            Field field = objectReference.referenceType().fieldByName(fieldString);
+            result = (ObjectReference) objectReference.getValue(field);
+        } catch (Exception e) {
+            debugWebSocket.sendFail(handleOrPlugin + ": " + fieldString + "字段获取失败");
+        }
+        return result;
     }
 
 }

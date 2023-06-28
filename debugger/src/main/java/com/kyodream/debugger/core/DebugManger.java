@@ -25,13 +25,15 @@ public class DebugManger {
     private Boolean scannerComplete = true;
 
     @Autowired
-    public DebugManger(Spring spring, Tomcat tomcat, Jetty jetty, Jersey jersey, Struts struts, DebugWebSocket debugWebSocket) {
-
+    public DebugManger(SpringMvc spring, Tomcat tomcat, Jetty jetty, Jersey jersey, Struts struts, DebugWebSocket debugWebSocket) {
         dataWrappers.put("spring", spring);
         dataWrappers.put("tomcat", tomcat);
         dataWrappers.put("jetty", jetty);
         dataWrappers.put("jersey", jersey);
         dataWrappers.put("struts", struts);
+        dataWrappers.values().forEach(handleOrPlugin->{
+            handleOrPlugin.setHandleOrPlugin();
+        });
         this.debugWebSocket = debugWebSocket;
     }
 

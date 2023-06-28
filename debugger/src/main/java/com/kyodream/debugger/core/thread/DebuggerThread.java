@@ -7,6 +7,7 @@ import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.VirtualMachine;
 import lombok.extern.slf4j.Slf4j;
+
 import java.util.*;
 
 @Slf4j
@@ -48,7 +49,7 @@ public class DebuggerThread implements Runnable {
 
     private void clearData() {
         HashMap<String, AbstractDataWrapper> allDataWrapper = debugManger.getAllDataWrapper();
-        allDataWrapper.values().forEach(abstractDataWrapper->{
+        allDataWrapper.values().forEach(abstractDataWrapper -> {
             abstractDataWrapper.clearData();
         });
     }
@@ -79,7 +80,12 @@ public class DebuggerThread implements Runnable {
     private void handleEvent() {
         for (AbstractDataWrapper handle : handles) {
             if (!handle.isFind()) {
-                handle.analystsObject(vm);
+                try {
+                    handle.analystsObject(vm);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    webSocket.sendFail(handle.handleOrPlugin + "处理过程中出现无法处理的异常!");
+                }
             }
         }
     }

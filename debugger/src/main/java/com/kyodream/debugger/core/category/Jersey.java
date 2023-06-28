@@ -2,8 +2,7 @@ package com.kyodream.debugger.core.category;
 
 import com.kyodream.debugger.core.analyse.MapAnalyse;
 import com.kyodream.debugger.core.analyse.SetAnalyse;
-import com.kyodream.debugger.core.analyse.Utils;
-import com.kyodream.debugger.core.category.format.JerseyFormat;
+import com.kyodream.debugger.core.category.format.Format;
 import com.kyodream.debugger.service.DebugWebSocket;
 import com.sun.jdi.*;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +36,7 @@ public class Jersey extends AbstractDataWrapper {
 
     @Override
     public void analystsObject(VirtualMachine attach) {
-        if(prefix == null){
+        if (prefix == null) {
             debugWebSocket.sendInfo("还分析获取jersey前缀,跳过");
             return;
         }
@@ -59,17 +58,22 @@ public class Jersey extends AbstractDataWrapper {
         debugWebSocket.sendInfo("分析jersey完成");
     }
 
+    @Override
+    public void setHandleOrPlugin() {
+        this.handleOrPlugin = "jersey";
+    }
+
     private void handleJersey(ObjectReference jerseyObject) {
-        ObjectReference webComponent = Utils.getFieldObject(jerseyObject, "webComponent");
-        ObjectReference application = Utils.getFieldObject(webComponent, "application");
-        ObjectReference abstractRootResources = Utils.getFieldObject(application, "abstractRootResources");
+        ObjectReference webComponent = getFieldObject(jerseyObject, "webComponent");
+        ObjectReference application = getFieldObject(webComponent, "application");
+        ObjectReference abstractRootResources = getFieldObject(application, "abstractRootResources");
         ArrayList<ObjectReference> resources = SetAnalyse.getUnmodifiableSet(abstractRootResources);
         for (ObjectReference resource : resources) {
-            ObjectReference resourceClass = Utils.getFieldObject(resource, "resourceClass");
-            String className = ((StringReference) Utils.getFieldObject(resourceClass, "name")).value();
-            ObjectReference uriPath = Utils.getFieldObject(resource, "uriPath");
-            String url = ((StringReference) Utils.getFieldObject(uriPath, "value")).value();
-            jerseyUrl.put(JerseyFormat.doubleSlash(prefix + url + "(/?)"), className);
+            ObjectReference resourceClass = getFieldObject(resource, "resourceClass");
+            String className = ((StringReference) getFieldObject(resourceClass, "name")).value();
+            ObjectReference uriPath = getFieldObject(resource, "uriPath");
+            String url = ((StringReference) getFieldObject(uriPath, "value")).value();
+            jerseyUrl.put(Format.doubleSlash(prefix + url + "(/?)"), className);
         }
     }
 
@@ -110,10 +114,10 @@ public class Jersey extends AbstractDataWrapper {
          *      appHandler
          *         cachedClasses(HashSet)  包含每一个路由对应的路由对象
          */
-        ObjectReference webComponent = Utils.getFieldObject(root, "webComponent");
-        ObjectReference appHandler = Utils.getFieldObject(webComponent, "appHandler");
-        ObjectReference application = Utils.getFieldObject(appHandler, "application");
-        ObjectReference cachedClasses = Utils.getFieldObject(application, "cachedClasses");
+        ObjectReference webComponent = getFieldObject(root, "webComponent");
+        ObjectReference appHandler = getFieldObject(webComponent, "appHandler");
+        ObjectReference application = getFieldObject(appHandler, "application");
+        ObjectReference cachedClasses = getFieldObject(application, "cachedClasses");
         ArrayList<ObjectReference> classesList = SetAnalyse.getHashSetObject(cachedClasses);
         classesList.stream().forEach(classObject -> {
             try {
@@ -126,40 +130,47 @@ public class Jersey extends AbstractDataWrapper {
     }
 
     private void handleUrlMapping(ObjectReference classObject) {
-        String className = ((StringReference) Utils.getFieldObject(classObject, "name")).value();
+        String className = ((StringReference) getFieldObject(classObject, "name")).value();
         String rawUrl = "";
-        ObjectReference annotationData = Utils.getFieldObject(classObject, "annotationData");
-        ObjectReference annotations = Utils.getFieldObject(annotationData, "annotations");
-        Map<ObjectReference, ObjectReference> hashMapObject = MapAnalyse.getHashMapObject(annotations);
-        Iterator<Map.Entry<ObjectReference, ObjectReference>> iterator = hashMapObject.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<ObjectReference, ObjectReference> next = iterator.next();
-            ObjectReference annotationName = next.getKey();
-            ObjectReference urlObject = next.getValue();
-            String annotationNameString = ((StringReference) Utils.getFieldObject(annotationName, "name")).value();
+        ObjectReference annotationData = getFieldObject(classObject, "annotationData");
+        ObjectReference annotations = getFieldObject(annotationData, "annotations");
+        Map<ObjectReference, ObjectReference> hashMapObject = null;
+        try {
+            hashMapObject = MapAnalyse.getHashMapObject(annotations);
+        } catch (Exception e) {
+            debugWebSocket.sendInfo(className + "类中不存在路由注解!(请自行检查)");
+        }
+        if (hashMapObject != null) {
+            Iterator<Map.Entry<ObjectReference, ObjectReference>> iterator = hashMapObject.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<ObjectReference, ObjectReference> next = iterator.next();
+                ObjectReference annotationName = next.getKey();
+                ObjectReference urlObject = next.getValue();
+                String annotationNameString = ((StringReference) getFieldObject(annotationName, "name")).value();
 
-            /**
-             * annotations子节点的结构
-             *  h
-             *      memberValues
-             [k,v]   (value = 'url')
-             */
-            if (annotationNameString.equals("javax.ws.rs.Path")) {
-                Field h = urlObject.referenceType().fieldByName("h");
-                ObjectReference invocationHandler = (ObjectReference) urlObject.getValue(h);
-                ObjectReference memberValues = Utils.getFieldObject(invocationHandler, "memberValues");
-                Map<ObjectReference, ObjectReference> kvObject = MapAnalyse.getHashMapObject(memberValues);
-                Iterator<Map.Entry<ObjectReference, ObjectReference>> iterator1 = kvObject.entrySet().iterator();
-                while (iterator1.hasNext()) {
-                    Map.Entry<ObjectReference, ObjectReference> next1 = iterator1.next();
-                    StringReference keyObject = (StringReference) next1.getKey();
-                    if (keyObject.value().equals("value")) {
-                        rawUrl = ((StringReference) next1.getValue()).value();
+                /**
+                 * annotations子节点的结构
+                 *  h
+                 *      memberValues
+                 [k,v]   (value = 'url')
+                 */
+                if (annotationNameString.equals("javax.ws.rs.Path")) {
+                    Field h = urlObject.referenceType().fieldByName("h");
+                    ObjectReference invocationHandler = (ObjectReference) urlObject.getValue(h);
+                    ObjectReference memberValues = getFieldObject(invocationHandler, "memberValues");
+                    Map<ObjectReference, ObjectReference> kvObject = MapAnalyse.getHashMapObject(memberValues);
+                    Iterator<Map.Entry<ObjectReference, ObjectReference>> iterator1 = kvObject.entrySet().iterator();
+                    while (iterator1.hasNext()) {
+                        Map.Entry<ObjectReference, ObjectReference> next1 = iterator1.next();
+                        StringReference keyObject = (StringReference) next1.getKey();
+                        if (keyObject.value().equals("value")) {
+                            rawUrl = ((StringReference) next1.getValue()).value();
+                        }
                     }
                 }
             }
+            jerseyUrl.put(Format.doubleSlash(prefix + rawUrl + "(/*?)"), className);
         }
-        jerseyUrl.put(JerseyFormat.doubleSlash(prefix + rawUrl + "(/*?)"), className);
     }
 
 }

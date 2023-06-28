@@ -17,8 +17,16 @@ public class SetAnalyse {
                 continue;
             }
             ObjectReference elemKvObject = (ObjectReference) elemKv;
-            ObjectReference keyObject = Utils.getFieldObject(elemKvObject, "key");
-            result.add(keyObject);
+            while (true){
+                ObjectReference keyObject = Utils.getFieldObject(elemKvObject, "key");
+                ObjectReference next = Utils.getFieldObject(elemKvObject, "next");
+                result.add(keyObject);
+                if(next != null){
+                    elemKvObject = next;
+                }else{
+                    break;
+                }
+            }
         }
         return result;
     }

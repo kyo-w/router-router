@@ -2,34 +2,43 @@
   <div v-if="exist">
     <el-container>
       <el-header>
-        <h2>Version: {{ version }}</h2>
+        <div v-if="modify">
+          <h2>修改框架的匹配模式: {{ prefix }}</h2>
+        </div>
       </el-header>
       <el-main>
         <el-table
-          :data="tableData"
-          style="width: 100%"
-          height="400">
+            :data="tableData"
+            style="width: 100%"
+            height="400">
           <el-table-column
-            prop="api"
-            label="接口"
-            width="300">
+              prop="api"
+              label="接口"
+              width="300">
           </el-table-column>
           <el-table-column
-            prop="name"
-            label="映射类"
-            width="600">
+              prop="name"
+              label="映射类"
+              width="600">
           </el-table-column>
         </el-table>
       </el-main>
       <el-footer>
-        count: <el-tag type="info">{{count}}</el-tag>
+        count:
+        <el-tag type="info">{{ count }}</el-tag>
       </el-footer>
     </el-container>
   </div>
 </template>
 
 <script>
-import {existTargetApi, getTargetDataApi, getTargetVersionAip} from "../../utils/dataApi";
+import {
+  existTargetApi,
+  getTargetDataApi,
+  getTargetVersionAip,
+  hasModifyApi,
+  getSpringPrefix
+} from "../../utils/dataApi";
 import {Message} from "@/utils/message";
 import {onBeforeUnmount} from "vue";
 
@@ -40,8 +49,9 @@ export default {
       tableData: [],
       version: "",
       exist: false,
-      count: 0
-
+      count: 0,
+      modify: false,
+      prefix: null
     }
   },
   async created() {
@@ -50,7 +60,7 @@ export default {
         Message('路由', 'Spring路由获取失败', 'error')
         this.$router.push("/main")
         this.exist = false
-      }else {
+      } else {
         this.exist = true
       }
     })
@@ -59,7 +69,7 @@ export default {
         let mapkey = Object.keys(res.data.msg)
         this.count = mapkey.length
         let tmpList = []
-        for(let i=0; i < mapkey.length; i++){
+        for (let i = 0; i < mapkey.length; i++) {
           let data = new Object()
           data.api = mapkey[i]
           data.name = res.data.msg[mapkey[i]]
@@ -71,14 +81,22 @@ export default {
         this.version = res.data.msg
       })
     }
+    hasModifyApi().then(res => {
+      if (res.data.msg) {
+        this.modify = true
+      }
+    })
+    getSpringPrefix().then(res => {
+      this.prefix = res.data.msg
+    })
   },
   mounted() {
-    const timer = setInterval(()=>{
+    const timer = setInterval(() => {
       getTargetDataApi('spring').then(res => {
         let mapkey = Object.keys(res.data.msg)
         this.count = mapkey.length
         let tmpList = []
-        for(let i=0; i < mapkey.length; i++){
+        for (let i = 0; i < mapkey.length; i++) {
           let data = new Object()
           data.api = mapkey[i]
           data.name = res.data.msg[mapkey[i]]

@@ -2,8 +2,7 @@ package com.kyodream.debugger.core.category;
 
 import com.kyodream.debugger.core.analyse.ListAnalyse;
 import com.kyodream.debugger.core.analyse.MapAnalyse;
-import com.kyodream.debugger.core.analyse.Utils;
-import com.kyodream.debugger.core.category.format.StrutsFormat;
+import com.kyodream.debugger.core.category.format.Format;
 import com.kyodream.debugger.service.DebugWebSocket;
 import com.sun.jdi.*;
 import lombok.extern.slf4j.Slf4j;
@@ -66,14 +65,19 @@ public class Struts extends AbstractDataWrapper {
         }
     }
 
+    @Override
+    public void setHandleOrPlugin() {
+        this.handleOrPlugin = "struts";
+    }
+
     private void analystsStruts1(ObjectReference strutsObject) {
         ObjectReference actionConfigs = null;
         boolean isActionConfigList = true;
         try {
-            actionConfigs = Utils.getFieldObject(strutsObject, "actionConfigList");
+            actionConfigs = getFieldObject(strutsObject, "actionConfigList");
         }catch (Exception e){
             isActionConfigList = false;
-            actionConfigs = Utils.getFieldObject(strutsObject, "actionConfigs");
+            actionConfigs = getFieldObject(strutsObject, "actionConfigs");
             debugWebSocket.sendInfo("struts1.x版本过低，从actionConfigs中获取");
         }
 
@@ -83,21 +87,21 @@ public class Struts extends AbstractDataWrapper {
                 StringReference pathRef = null;
                 StringReference typeRef = null;
                 try {
-                    pathRef = (StringReference) Utils.getFieldObject(actionConfig, "path");
+                    pathRef = (StringReference) getFieldObject(actionConfig, "path");
                 } catch (Exception e) {
                     return;
                 }
                 try {
-                    typeRef = (StringReference) Utils.getFieldObject(actionConfig, "type");
+                    typeRef = (StringReference) getFieldObject(actionConfig, "type");
                 } catch (Exception e) {
                     return;
                 }
                 String url = this.prefix.replace("*", "/" + pathRef.value());
 
                 if (typeRef == null) {
-                    this.maps.put(StrutsFormat.doubleSlash(url), "");
+                    this.maps.put(Format.doubleSlash(url), "");
                 } else {
-                    this.maps.put(StrutsFormat.doubleSlash(url), typeRef.value());
+                    this.maps.put(Format.doubleSlash(url), typeRef.value());
                 }
             });
         }else {
@@ -106,12 +110,12 @@ public class Struts extends AbstractDataWrapper {
             StringReference pathRef = null;
             StringReference typeRef = null;
             try {
-                pathRef = (StringReference) Utils.getFieldObject(elem, "path");
+                pathRef = (StringReference) getFieldObject(elem, "path");
             } catch (Exception e) {
                 debugWebSocket.sendFail("获取路由路径发现异常！");
             }
             try {
-                typeRef = (StringReference) Utils.getFieldObject(elem, "type");
+                typeRef = (StringReference) getFieldObject(elem, "type");
             } catch (Exception e) {
                 debugWebSocket.sendFail("获取路由映射对象发现异常！");
             }
@@ -120,9 +124,9 @@ public class Struts extends AbstractDataWrapper {
                 return;
             }
             if (typeRef == null) {
-                this.maps.put(StrutsFormat.doubleSlash(url), "");
+                this.maps.put(Format.doubleSlash(url), "");
             } else {
-                this.maps.put(StrutsFormat.doubleSlash(url), typeRef.value());
+                this.maps.put(Format.doubleSlash(url), typeRef.value());
             }
         });
         }
@@ -131,8 +135,8 @@ public class Struts extends AbstractDataWrapper {
     private void analystsStruts2(ObjectReference strutsObject) {
         hasFind();
         debugWebSocket.sendSuccess("发现并分析struts路由");
-        ObjectReference runtimeConfiguration = Utils.getFieldObject(strutsObject, "runtimeConfiguration");
-        ObjectReference namespaceActionConfigs = Utils.getFieldObject(runtimeConfiguration, "namespaceActionConfigs");
+        ObjectReference runtimeConfiguration = getFieldObject(strutsObject, "runtimeConfiguration");
+        ObjectReference namespaceActionConfigs = getFieldObject(runtimeConfiguration, "namespaceActionConfigs");
         Map<ObjectReference, ObjectReference> unmodifiableMap = null;
         try {
             unmodifiableMap = MapAnalyse.getUnmodifiableMap(namespaceActionConfigs);
@@ -146,8 +150,8 @@ public class Struts extends AbstractDataWrapper {
                 Map<ObjectReference, ObjectReference> subUrlMapping = MapAnalyse.getHashMapObject(value);
                 subUrlMapping.forEach((ObjectReference subKey, ObjectReference subValue) -> {
                     String urlRaw = this.prefix.replace("*", "/" + prefixUrl + "/" + ((StringReference) subKey).value());
-                    String url = StrutsFormat.doubleSlash(urlRaw);
-                    String className = ((StringReference) Utils.getFieldObject(subValue, "className")).value();
+                    String url = Format.doubleSlash(urlRaw);
+                    String className = ((StringReference) getFieldObject(subValue, "className")).value();
                     this.maps.put(url, className);
                 });
             });

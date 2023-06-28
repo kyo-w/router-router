@@ -1,7 +1,7 @@
 package com.kyodream.debugger.core.category;
 
 import com.kyodream.debugger.core.analyse.MapAnalyse;
-import com.kyodream.debugger.core.analyse.Utils;
+import com.kyodream.debugger.core.category.format.Format;
 import com.kyodream.debugger.service.DebugWebSocket;
 import com.sun.jdi.*;
 import lombok.extern.slf4j.Slf4j;
@@ -30,17 +30,17 @@ public class Tomcat extends AbstractDataWrapper {
     private Jersey jersey;
     @Autowired
     private Struts struts;
+
+    @Autowired
+    SpringMvc springMvc;
     private static HashMap<String, String> exactWrappersMap = new HashMap<>();
     private static HashMap<String, String> wildcardWrappersMap = new HashMap<>();
     private static HashMap<String, String> extensionWrappersMap = new HashMap<>();
     private static HashMap<String, String> defaultMap = new HashMap<>();
     private String version;
-
     private Set<ObjectReference> tomcatObjects = new HashSet<>();
     private VirtualMachine vm;
 
-    @Autowired
-    private DebugWebSocket debugWebSocket;
 
     @Override
     public void addAnalysisObject(Set<ObjectReference> objectReference) {
@@ -78,9 +78,20 @@ public class Tomcat extends AbstractDataWrapper {
             if (jersey.isFind()) {
                 jersey.analystsObject(attach);
             }
+            if (struts.isFind()) {
+                struts.analystsObject(attach);
+            }
+            if (springMvc.isFind()) {
+                springMvc.analystsObject(attach);
+            }
         }
         debugWebSocket.sendInfo("结束分析tomcat");
 
+    }
+
+    @Override
+    public void setHandleOrPlugin() {
+        this.handleOrPlugin = "tomcat";
     }
 
     private void handleStruts2_98(ObjectReference tomcatObject) {
@@ -90,12 +101,12 @@ public class Tomcat extends AbstractDataWrapper {
         containList = (ObjectReference) tomcatObject.getValue(contextObjectToContextVersionMap);
         Map<ObjectReference, ObjectReference> hashMapObject = MapAnalyse.getConcurrentHashMapObject(containList);
         hashMapObject.forEach((ObjectReference key, ObjectReference value) -> {
-            ObjectReference filterConfigs = Utils.getFieldObject(key, "filterConfigs");
+            ObjectReference filterConfigs = getFieldObject(key, "filterConfigs");
             Map<ObjectReference, ObjectReference> filterConfigsObject = MapAnalyse.getHashMapObject(filterConfigs);
             String[] classNameAlias = new String[]{""};
             filterConfigsObject.forEach((ObjectReference filterKey, ObjectReference filterValue) -> {
-                ObjectReference filterDef = Utils.getFieldObject(filterValue, "filterDef");
-                StringReference filterClassName = (StringReference) Utils.getFieldObject(filterDef, "filterClass");
+                ObjectReference filterDef = getFieldObject(filterValue, "filterDef");
+                StringReference filterClassName = (StringReference) getFieldObject(filterDef, "filterClass");
                 if (filterClassName.value().equals("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter")) {
 //                    struts2.2/2.3
                     classNameAlias[0] = ((StringReference) filterKey).value();
@@ -105,13 +116,13 @@ public class Tomcat extends AbstractDataWrapper {
                 }
             });
 
-            ObjectReference filterMaps = Utils.getFieldObject(key, "filterMaps");
-            ArrayReference array = (ArrayReference) Utils.getFieldObject(filterMaps, "array");
+            ObjectReference filterMaps = getFieldObject(key, "filterMaps");
+            ArrayReference array = (ArrayReference) getFieldObject(filterMaps, "array");
             array.getValues().stream().forEach((Object filterMapObject) -> {
                 ObjectReference filterMapObjectRef = (ObjectReference) filterMapObject;
-                StringReference filterName = (StringReference) Utils.getFieldObject(filterMapObjectRef, "filterName");
+                StringReference filterName = (StringReference) getFieldObject(filterMapObjectRef, "filterName");
                 if (filterName.value().equals(classNameAlias[0])) {
-                    ArrayReference urlPatterns = (ArrayReference) Utils.getFieldObject(filterMapObjectRef, "urlPatterns");
+                    ArrayReference urlPatterns = (ArrayReference) getFieldObject(filterMapObjectRef, "urlPatterns");
                     StringReference urlStringObject = (StringReference) urlPatterns.getValue(0);
                     struts.registryPrefix(urlStringObject.value());
                     struts.analystsObject(vm);
@@ -138,17 +149,17 @@ public class Tomcat extends AbstractDataWrapper {
     }
 
     private void handleTomcat76(ObjectReference tomcatObject) {
-        ArrayReference hosts = (ArrayReference) Utils.getFieldObject(tomcatObject, "hosts");
+        ArrayReference hosts = (ArrayReference) getFieldObject(tomcatObject, "hosts");
         for (int i = 0; i < hosts.length(); i++) {
             ObjectReference mapperHost = (ObjectReference) hosts.getValue(i);
-            ObjectReference contextList = Utils.getFieldObject(mapperHost, "contextList");
-            ArrayReference contexts = (ArrayReference) Utils.getFieldObject(contextList, "contexts");
+            ObjectReference contextList = getFieldObject(mapperHost, "contextList");
+            ArrayReference contexts = (ArrayReference) getFieldObject(contextList, "contexts");
             for (int j = 0; j < contexts.length(); j++) {
                 ObjectReference contextOne = (ObjectReference) contexts.getValue(i);
-                ArrayReference versions = (ArrayReference) Utils.getFieldObject(contextOne, "versions");
+                ArrayReference versions = (ArrayReference) getFieldObject(contextOne, "versions");
                 for (int z = 0; z < versions.length(); z++) {
                     ObjectReference context = (ObjectReference) versions.getValue(z);
-                    StringReference path = (StringReference) Utils.getFieldObject(context, "path");
+                    StringReference path = (StringReference) getFieldObject(context, "path");
                     String prefix = path.value();
                     handleCategory(prefix, context);
                 }
@@ -168,59 +179,86 @@ public class Tomcat extends AbstractDataWrapper {
     }
 
     private void handleDefaultWrapper(ObjectReference defaultWrapper) {
-        ObjectReference object = Utils.getFieldObject(defaultWrapper, "object");
-        StringReference servletClass = (StringReference) Utils.getFieldObject(object, "servletClass");
+        ObjectReference object = getFieldObject(defaultWrapper, "object");
+        StringReference servletClass = (StringReference) getFieldObject(object, "servletClass");
         defaultMap.put("/", servletClass.value());
     }
 
     private void handleExactWrappers(String prefix, ArrayReference exactWrappers) {
-        handleMapperWrappers(prefix, exactWrappers, exactWrappersMap);
+        handleMapperWrappers(prefix, exactWrappers, exactWrappersMap, UrlType.Exact);
     }
 
     private void handleWildcardWrappers(String prefix, ArrayReference wildcardWrappers) {
-        handleMapperWrappers(prefix, wildcardWrappers, wildcardWrappersMap);
+        handleMapperWrappers(prefix, wildcardWrappers, wildcardWrappersMap, UrlType.Wild);
     }
 
     private void handleExtensionWrappers(String prefix, ArrayReference extensionWrappers) {
-        handleMapperWrappers(prefix, extensionWrappers, extensionWrappersMap);
+        handleMapperWrappers(prefix, extensionWrappers, extensionWrappersMap, UrlType.Ext);
     }
 
-    private void handleMapperWrappers(String prefix, ArrayReference objectReference, HashMap<String, String> originMap) {
+    private void handleMapperWrappers(String prefix, ArrayReference objectReference, HashMap<String, String> originMap, UrlType urlType) {
         int length = objectReference.length();
         for (int i = 0; i < length; i++) {
             ObjectReference elem = (ObjectReference) objectReference.getValue(i);
-            String url = ((StringReference) Utils.getFieldObject(elem, "name")).value();
-            ObjectReference object = Utils.getFieldObject(elem, "object");
-            String servletClass = ((StringReference) Utils.getFieldObject(object, "servletClass")).value();
+            String url = ((StringReference) getFieldObject(elem, "name")).value();
+            ObjectReference object = getFieldObject(elem, "object");
+            String servletClass = ((StringReference) getFieldObject(object, "servletClass")).value();
+            String fullName = "";
+            if (urlType == UrlType.Exact) {
+                fullName = Format.doubleSlash(prefix + "/" + url);
+            } else if (urlType == UrlType.Wild) {
+                fullName = prefix + url + "/*";
+            } else if (urlType == UrlType.Ext) {
+                fullName = prefix +  "/*." + url;
+            }
             if (jersey.getDiscoveryClass().contains(servletClass)) {
                 jersey.registryPrefix(prefix + url);
             }
             if (servletClass.equals("org.apache.struts.action.ActionServlet")) {
-                if (!url.startsWith("/")) {
-                    struts.registryPrefix(prefix + "*." + url);
-
-                } else {
-                    struts.registryPrefix(prefix + url + "/*");
-                }
-                struts.analystsObject(vm);
+                    struts.registryPrefix(fullName);
             }
-            originMap.put(prefix + url, servletClass);
+            if (servletClass.equals("org.springframework.web.servlet.DispatcherServlet")) {
+                    springMvc.registryPrefix(fullName);
+            }
+            handlerMagicModificationFramework(fullName, servletClass, servletClass);
+            originMap.put(fullName, servletClass);
         }
+    }
+
+    private void handlerMagicModificationFramework(String url, String className, String baseName) {
+        List<ReferenceType> referenceTypes = vm.classesByName(className);
+        referenceTypes.forEach(referenceType -> {
+            ClassType superclass = ((ClassType) referenceType).superclass();
+            if (superclass != null) {
+                if (superclass.name().equals("org.springframework.web.servlet.DispatcherServlet")) {
+                    debugWebSocket.sendInfo("spring的类: " + baseName);
+                    if (url.endsWith("*")) {
+                        springMvc.registryPrefix(url.substring(0, url.length() - 1));
+                    } else {
+                        springMvc.registryPrefix(url);
+                    }
+                    springMvc.hasModify();
+                    springMvc.hasFind();
+                } else {
+                    handlerMagicModificationFramework(url, superclass.name(), baseName);
+                }
+            }
+        });
     }
 
     @Override
     public HashMap<String, String> getDataWrapper() {
         HashMap<String, String> resultHashMap = new HashMap<>();
-        if(defaultMap == null){
+        if (defaultMap == null) {
             defaultMap = new HashMap<>();
         }
-        if(exactWrappersMap == null){
+        if (exactWrappersMap == null) {
             exactWrappersMap = new HashMap<>();
         }
-        if(wildcardWrappersMap == null){
+        if (wildcardWrappersMap == null) {
             wildcardWrappersMap = new HashMap<>();
         }
-        if(extensionWrappersMap == null){
+        if (extensionWrappersMap == null) {
             extensionWrappersMap = new HashMap<>();
         }
         resultHashMap.putAll(defaultMap);
@@ -258,4 +296,10 @@ public class Tomcat extends AbstractDataWrapper {
         }
     }
 
+
+    enum UrlType {
+        Exact,
+        Wild,
+        Ext
+    }
 }

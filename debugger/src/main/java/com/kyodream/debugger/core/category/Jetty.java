@@ -1,7 +1,6 @@
 package com.kyodream.debugger.core.category;
 
-import com.kyodream.debugger.core.analyse.Utils;
-import com.kyodream.debugger.core.category.format.JettyFormat;
+import com.kyodream.debugger.core.category.format.Format;
 import com.kyodream.debugger.service.DebugWebSocket;
 import com.sun.jdi.*;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +60,11 @@ public class Jetty extends AbstractDataWrapper {
         debugWebSocket.sendInfo("结束分析jetty");
     }
 
+    @Override
+    public void setHandleOrPlugin() {
+        this.handleOrPlugin = "jetty";
+    }
+
     private void selectorHandle(ObjectReference jettyObject) {
         String handleName = jettyObject.referenceType().name();
         if (handleName != null) {
@@ -75,28 +79,28 @@ public class Jetty extends AbstractDataWrapper {
     }
 
     private void handleWebAppContext(ObjectReference handler, String prefix) {
-        String rawContextPath = Utils.getFieldObject(handler, "_contextPath").toString();
-        String contextPath = JettyFormat.doubleDot(rawContextPath);
-        ObjectReference servletHandler = Utils.getFieldObject(handler, "_servletHandler");
-        ArrayReference servletMappings = (ArrayReference) Utils.getFieldObject(servletHandler, "_servletMappings");
+        String rawContextPath = getFieldObject(handler, "_contextPath").toString();
+        String contextPath = Format.doubleDot(rawContextPath);
+        ObjectReference servletHandler = getFieldObject(handler, "_servletHandler");
+        ArrayReference servletMappings = (ArrayReference) getFieldObject(servletHandler, "_servletMappings");
         HashMap<String, String> servletAliasName = getServletAliasName(servletHandler);
         handlerServletMappingObject(servletMappings, prefix + contextPath, servletAliasName, servletHandler);
     }
 
     private void handlerServletContext(ObjectReference handler, String prefix) {
-        ObjectReference servletHandler = Utils.getFieldObject(handler, "_servletHandler");
-        ArrayReference servletMappings = (ArrayReference) Utils.getFieldObject(servletHandler, "_servletMappings");
+        ObjectReference servletHandler = getFieldObject(handler, "_servletHandler");
+        ArrayReference servletMappings = (ArrayReference) getFieldObject(servletHandler, "_servletMappings");
         HashMap<String, String> servletAliasName = getServletAliasName(servletHandler);
         handlerServletMappingObject(servletMappings, prefix, servletAliasName, servletHandler);
     }
 
     private HashMap<String, String> getServletAliasName(ObjectReference servletHandler) {
         HashMap<String, String> result = new HashMap<>();
-        ArrayReference servlets = (ArrayReference) Utils.getFieldObject(servletHandler, "_servlets");
+        ArrayReference servlets = (ArrayReference) getFieldObject(servletHandler, "_servlets");
         for (Value servlet : servlets.getValues()) {
             ObjectReference servletObject = (ObjectReference) servlet;
-            StringReference name = (StringReference) Utils.getFieldObject(servletObject, "_name");
-            StringReference className = (StringReference) Utils.getFieldObject(servletObject, "_className");
+            StringReference name = (StringReference) getFieldObject(servletObject, "_name");
+            StringReference className = (StringReference) getFieldObject(servletObject, "_className");
             result.put(name.value(), className.value());
         }
         return result;
@@ -105,12 +109,12 @@ public class Jetty extends AbstractDataWrapper {
     private void handlerServletMappingObject(ArrayReference servletMappings, String prefix, HashMap<String, String> classNameMapping, ObjectReference servletHandler) {
 
         for (Value servletMapping : servletMappings.getValues()) {
-            String classNameMap = ((StringReference) Utils.getFieldObject((ObjectReference) servletMapping, "_servletName")).value();
+            String classNameMap = ((StringReference) getFieldObject((ObjectReference) servletMapping, "_servletName")).value();
             String className = classNameMapping.get(classNameMap);
-            ArrayReference pathSpecs = (ArrayReference) Utils.getFieldObject((ObjectReference) servletMapping, "_pathSpecs");
+            ArrayReference pathSpecs = (ArrayReference) getFieldObject((ObjectReference) servletMapping, "_pathSpecs");
             for (Value pathSpec : pathSpecs.getValues()) {
                 String rawResult = ((StringReference) pathSpec).value();
-                String url = JettyFormat.doubleSlash(prefix + rawResult);
+                String url = Format.doubleSlash(prefix + rawResult);
                 if (jerseyHandle.getDiscoveryClass().contains(className)) {
                     if (rawResult.endsWith("*")) {
                         jerseyHandle.registryPrefix(url.substring(0, url.length() - 1));
@@ -133,15 +137,15 @@ public class Jetty extends AbstractDataWrapper {
         }
 
         if (struts.getStrutsVersion() == 2) {
-            ArrayReference filterMappings = (ArrayReference) Utils.getFieldObject(servletHandler, "_filterMappings");
+            ArrayReference filterMappings = (ArrayReference) getFieldObject(servletHandler, "_filterMappings");
             filterMappings.getValues().stream().forEach((Value filterMapping) -> {
                 ObjectReference filterMappingRef = (ObjectReference) filterMapping;
-                ObjectReference holderRef = Utils.getFieldObject(filterMappingRef, "_holder");
-                StringReference classNameRef = (StringReference) Utils.getFieldObject(holderRef, "_className");
+                ObjectReference holderRef = getFieldObject(filterMappingRef, "_holder");
+                StringReference classNameRef = (StringReference) getFieldObject(holderRef, "_className");
                 String url = null;
                 if (classNameRef.value().equals("org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter") ||
                         classNameRef.value().equals("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter")) {
-                    ArrayReference pathSpecsArray = (ArrayReference) Utils.getFieldObject(filterMappingRef, "_pathSpecs");
+                    ArrayReference pathSpecsArray = (ArrayReference) getFieldObject(filterMappingRef, "_pathSpecs");
                     StringReference urlRef = (StringReference) pathSpecsArray.getValue(0);
                     url = urlRef.value();
                 }

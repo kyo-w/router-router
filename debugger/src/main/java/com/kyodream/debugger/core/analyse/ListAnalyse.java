@@ -6,7 +6,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class ListAnalyse {
-
     public static List<ObjectReference> getArrayList(ObjectReference arrayListObject) {
         Field elementData = arrayListObject.referenceType().fieldByName("elementData");
         ArrayReference elementDataObject = (ArrayReference) arrayListObject.getValue(elementData);
