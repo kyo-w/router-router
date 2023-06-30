@@ -79,13 +79,11 @@ public class DebuggerThread implements Runnable {
 
     private void handleEvent() {
         for (AbstractDataWrapper handle : handles) {
-            if (!handle.isFind()) {
-                try {
-                    handle.analystsObject(vm);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    webSocket.sendFail(handle.handleOrPlugin + "处理过程中出现无法处理的异常!");
-                }
+            try {
+                handle.startAnalysts(vm);
+            } catch (Exception e) {
+                e.printStackTrace();
+                webSocket.sendFail(handle.handleOrPlugin + "处理过程中出现无法处理的异常!");
             }
         }
     }

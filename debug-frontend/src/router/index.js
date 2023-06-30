@@ -6,6 +6,7 @@ const Spring = ()=>import("../components/info/Spring")
 const Struts = ()=>import("../components/info/Struts")
 const Jersey = ()=>import("../components/info/Jersey")
 const Jetty = ()=>import("../components/info/Jetty")
+const Filter = ()=>import("../components/info/Filter")
 
 const routes = [
     {
@@ -41,6 +42,9 @@ const routes = [
             }, {
                 path: 'cleanback',
                 redirect: '/main'
+            },{
+                path: 'filter',
+                component: Filter
             }
         ]
     }

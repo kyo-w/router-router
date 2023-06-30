@@ -25,13 +25,14 @@ public class DebugManger {
     private Boolean scannerComplete = true;
 
     @Autowired
-    public DebugManger(SpringMvc spring, Tomcat tomcat, Jetty jetty, Jersey jersey, Struts struts, DebugWebSocket debugWebSocket) {
+    public DebugManger(SpringMvc spring, Tomcat tomcat, Jetty jetty, Jersey jersey, Struts struts, Filter filter, DebugWebSocket debugWebSocket) {
         dataWrappers.put("spring", spring);
         dataWrappers.put("tomcat", tomcat);
         dataWrappers.put("jetty", jetty);
         dataWrappers.put("jersey", jersey);
         dataWrappers.put("struts", struts);
-        dataWrappers.values().forEach(handleOrPlugin->{
+        dataWrappers.put("filter", filter);
+        dataWrappers.values().forEach(handleOrPlugin -> {
             handleOrPlugin.setHandleOrPlugin();
         });
         this.debugWebSocket = debugWebSocket;
@@ -45,10 +46,10 @@ public class DebugManger {
         }
     }
 
-    public boolean connectRemoteJVM(){
-        if(debuggerArgs == null){
+    public boolean connectRemoteJVM() {
+        if (debuggerArgs == null) {
             return false;
-        }else{
+        } else {
             SocketAttachingConnector socketAttachingConnector = new SocketAttachingConnector();
             Map<String, Connector.Argument> argumentHashMap = socketAttachingConnector.defaultArguments();
             argumentHashMap.get("hostname").setValue(debuggerArgs.getHostname());
@@ -73,21 +74,22 @@ public class DebugManger {
         }
     }
 
-    public boolean startAnalysts(){
-        if(this.scannerComplete){
+    public boolean startAnalysts() {
+        if (this.scannerComplete) {
             DebuggerThread analystsThread = new DebuggerThread(debugWebSocket, this);
             Thread thread = new Thread(analystsThread);
             thread.start();
             return true;
-        }else{
+        } else {
             return false;
         }
     }
 
-    public VirtualMachine getVm(){
+    public VirtualMachine getVm() {
         return vm;
     }
-    public void setScannerComplete(Boolean flag){
+
+    public void setScannerComplete(Boolean flag) {
         this.scannerComplete = flag;
     }
 
@@ -99,11 +101,23 @@ public class DebugManger {
         return dataWrappers;
     }
 
-    public boolean existConnect(){
-        if(vm == null){
+    public boolean existConnect() {
+        if (vm == null) {
             return false;
-        }else{
+        } else {
             return true;
+        }
+    }
+
+    public boolean closeConnect() {
+        if (this.scannerComplete) {
+            if(this.vm != null) {
+                this.vm.dispose();
+                this.vm = null;
+            }
+            return true;
+        }else{
+            return false;
         }
     }
 

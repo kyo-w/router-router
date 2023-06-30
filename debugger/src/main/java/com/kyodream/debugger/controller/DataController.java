@@ -12,9 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletResponse;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/data")
@@ -36,6 +34,9 @@ public class DataController {
 
     @Autowired
     private DebugManger bugManger;
+
+    @Autowired
+    private Filter filter;
 
     @GetMapping("/{middle}")
     public ApiResponse getMiddleData(@PathVariable("middle") String middle) {
@@ -76,7 +77,7 @@ public class DataController {
     public ApiResponse existTarget(@PathVariable("target") String target) {
         HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllDataWrapper();
         AbstractDataWrapper abstractDataWrapper = allDataStatus.get(target);
-        return new ApiResponse(200, abstractDataWrapper.isFind());
+        return new ApiResponse(200, abstractDataWrapper.isCompleteAnalysts());
     }
 
     @GetMapping("/version/{target}")
@@ -123,5 +124,11 @@ public class DataController {
         if (middle.equals("all")) {
             ExportUtils.exportAllData(bugManger.getAllDataWrapper(), response);
         }
+    }
+
+    @GetMapping("/filter")
+    public ApiResponse getFilterMap(){
+        HashMap<String, LinkedHashMap<String, Set<String>>> filterMap = filter.getFilterMap();
+        return new ApiResponse(200, filterMap);
     }
 }

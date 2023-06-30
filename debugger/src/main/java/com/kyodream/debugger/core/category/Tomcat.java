@@ -25,14 +25,6 @@ public class Tomcat extends AbstractDataWrapper {
         discoveryClass.add("org.apache.catalina.mapper.Mapper");
         discoveryClass.add("org.apache.tomcat.util.http.mapper.Mapper");
     }
-
-    @Autowired
-    private Jersey jersey;
-    @Autowired
-    private Struts struts;
-
-    @Autowired
-    SpringMvc springMvc;
     private static HashMap<String, String> exactWrappersMap = new HashMap<>();
     private static HashMap<String, String> wildcardWrappersMap = new HashMap<>();
     private static HashMap<String, String> extensionWrappersMap = new HashMap<>();
@@ -41,18 +33,23 @@ public class Tomcat extends AbstractDataWrapper {
     private Set<ObjectReference> tomcatObjects = new HashSet<>();
     private VirtualMachine vm;
 
+    @Autowired
+    Handler handler;
+
 
     @Override
     public void addAnalysisObject(Set<ObjectReference> objectReference) {
+        if(objectReference.size() > 0){
+            hasFind();
+        }
         debugWebSocket.sendInfo("发现tomcat");
         this.tomcatObjects.addAll(objectReference);
     }
 
     @Override
-    public void analystsObject(VirtualMachine attach) {
+    public boolean analystsObject(VirtualMachine attach) {
         this.vm = attach;
         handleVersion(attach);
-        hasFind();
         debugWebSocket.sendInfo("开始分析tomcat");
         for (ObjectReference tomcatObject : this.tomcatObjects) {
             if (tomcatObject.referenceType().name().equals("org.apache.catalina.mapper.Mapper")) {
@@ -63,9 +60,6 @@ public class Tomcat extends AbstractDataWrapper {
                     e.printStackTrace();
                     debugWebSocket.sendFail("分析tomcat出现异常错误");
                 }
-                if (struts.getStrutsVersion() == 2) {
-                    handleStruts2_98(tomcatObject);
-                }
             } else if (tomcatObject.referenceType().name().equals("org.apache.tomcat.util.http.mapper.Mapper")) {
                 debugWebSocket.sendSuccess("获取Mapper,当前tomcat版本为7/6");
                 try {
@@ -75,18 +69,10 @@ public class Tomcat extends AbstractDataWrapper {
                     debugWebSocket.sendFail("分析tomcat出现异常错误");
                 }
             }
-            if (jersey.isFind()) {
-                jersey.analystsObject(attach);
-            }
-            if (struts.isFind()) {
-                struts.analystsObject(attach);
-            }
-            if (springMvc.isFind()) {
-                springMvc.analystsObject(attach);
-            }
+            handler.analystsPrefixHandler(vm);
         }
-        debugWebSocket.sendInfo("结束分析tomcat");
-
+        debugWebSocket.sendSuccess("结束分析tomcat");
+        return true;
     }
 
     @Override
@@ -94,53 +80,12 @@ public class Tomcat extends AbstractDataWrapper {
         this.handleOrPlugin = "tomcat";
     }
 
-    private void handleStruts2_98(ObjectReference tomcatObject) {
-        Field contextObjectToContextVersionMap = null;
-        ObjectReference containList = null;
-        contextObjectToContextVersionMap = tomcatObject.referenceType().fieldByName("contextObjectToContextVersionMap");
-        containList = (ObjectReference) tomcatObject.getValue(contextObjectToContextVersionMap);
-        Map<ObjectReference, ObjectReference> hashMapObject = MapAnalyse.getConcurrentHashMapObject(containList);
-        hashMapObject.forEach((ObjectReference key, ObjectReference value) -> {
-            ObjectReference filterConfigs = getFieldObject(key, "filterConfigs");
-            Map<ObjectReference, ObjectReference> filterConfigsObject = MapAnalyse.getHashMapObject(filterConfigs);
-            String[] classNameAlias = new String[]{""};
-            filterConfigsObject.forEach((ObjectReference filterKey, ObjectReference filterValue) -> {
-                ObjectReference filterDef = getFieldObject(filterValue, "filterDef");
-                StringReference filterClassName = (StringReference) getFieldObject(filterDef, "filterClass");
-                if (filterClassName.value().equals("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter")) {
-//                    struts2.2/2.3
-                    classNameAlias[0] = ((StringReference) filterKey).value();
-                } else if (filterClassName.value().equals("org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter")) {
-//                    struts2.5
-                    classNameAlias[0] = ((StringReference) filterKey).value();
-                }
-            });
-
-            ObjectReference filterMaps = getFieldObject(key, "filterMaps");
-            ArrayReference array = (ArrayReference) getFieldObject(filterMaps, "array");
-            array.getValues().stream().forEach((Object filterMapObject) -> {
-                ObjectReference filterMapObjectRef = (ObjectReference) filterMapObject;
-                StringReference filterName = (StringReference) getFieldObject(filterMapObjectRef, "filterName");
-                if (filterName.value().equals(classNameAlias[0])) {
-                    ArrayReference urlPatterns = (ArrayReference) getFieldObject(filterMapObjectRef, "urlPatterns");
-                    StringReference urlStringObject = (StringReference) urlPatterns.getValue(0);
-                    struts.registryPrefix(urlStringObject.value());
-                    struts.analystsObject(vm);
-                }
-            });
-        });
-    }
-
     private void handleTomcat98(ObjectReference tomcatObject) {
-        Field contextObjectToContextVersionMap = null;
-        ObjectReference containList = null;
-        contextObjectToContextVersionMap = tomcatObject.referenceType().fieldByName("contextObjectToContextVersionMap");
-        containList = (ObjectReference) tomcatObject.getValue(contextObjectToContextVersionMap);
+        ObjectReference containList = getFieldObject(tomcatObject, "contextObjectToContextVersionMap");
         Map<ObjectReference, ObjectReference> hashMapObject = MapAnalyse.getConcurrentHashMapObject(containList);
         Iterator<Map.Entry<ObjectReference, ObjectReference>> iterator = hashMapObject.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<ObjectReference, ObjectReference> next = iterator.next();
-            ObjectReference key = next.getKey();
             ObjectReference value = next.getValue();
             Field path = value.referenceType().fieldByName("path");
             String prefix = ((StringReference) value.getValue(path)).value();
@@ -209,41 +154,12 @@ public class Tomcat extends AbstractDataWrapper {
             } else if (urlType == UrlType.Wild) {
                 fullName = prefix + url + "/*";
             } else if (urlType == UrlType.Ext) {
-                fullName = prefix +  "/*." + url;
+                fullName = prefix + "/*." + url;
             }
-            if (jersey.getDiscoveryClass().contains(servletClass)) {
-                jersey.registryPrefix(prefix + url);
-            }
-            if (servletClass.equals("org.apache.struts.action.ActionServlet")) {
-                    struts.registryPrefix(fullName);
-            }
-            if (servletClass.equals("org.springframework.web.servlet.DispatcherServlet")) {
-                    springMvc.registryPrefix(fullName);
-            }
-            handlerMagicModificationFramework(fullName, servletClass, servletClass);
+            handler.registryPrefix(fullName, servletClass);
+            handler.handlerMagicModificationFramework(vm, fullName, servletClass, servletClass);
             originMap.put(fullName, servletClass);
         }
-    }
-
-    private void handlerMagicModificationFramework(String url, String className, String baseName) {
-        List<ReferenceType> referenceTypes = vm.classesByName(className);
-        referenceTypes.forEach(referenceType -> {
-            ClassType superclass = ((ClassType) referenceType).superclass();
-            if (superclass != null) {
-                if (superclass.name().equals("org.springframework.web.servlet.DispatcherServlet")) {
-                    debugWebSocket.sendInfo("spring的类: " + baseName);
-                    if (url.endsWith("*")) {
-                        springMvc.registryPrefix(url.substring(0, url.length() - 1));
-                    } else {
-                        springMvc.registryPrefix(url);
-                    }
-                    springMvc.hasModify();
-                    springMvc.hasFind();
-                } else {
-                    handlerMagicModificationFramework(url, superclass.name(), baseName);
-                }
-            }
-        });
     }
 
     @Override
@@ -276,7 +192,8 @@ public class Tomcat extends AbstractDataWrapper {
     @Override
     public void clearData() {
         this.version = "";
-        clearFindFlag();
+        super.clearData();
+        this.tomcatObjects = new HashSet<>();
         this.defaultMap = new HashMap<>();
         this.wildcardWrappersMap = new HashMap<>();
         this.exactWrappersMap = new HashMap<>();

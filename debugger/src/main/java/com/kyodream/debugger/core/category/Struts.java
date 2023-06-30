@@ -16,7 +16,7 @@ import java.util.*;
  */
 @Component
 @Slf4j
-public class Struts extends AbstractDataWrapper {
+public class Struts extends AbstractDataWrapper implements Plugin{
 
     private HashMap<String, String> maps = new HashMap();
 
@@ -40,6 +40,9 @@ public class Struts extends AbstractDataWrapper {
 
     @Override
     public void addAnalysisObject(Set<ObjectReference> objectReference) {
+        if(objectReference.size() > 0){
+            hasFind();
+        }
         debugWebSocket.sendInfo("发现struts对象");
         objectReference.forEach(refObject -> {
             if (refObject.referenceType().name().equals("org.apache.struts.config.impl.ModuleConfigImpl")) {
@@ -51,11 +54,15 @@ public class Struts extends AbstractDataWrapper {
             }
         });
         this.strutsObjects.addAll(objectReference);
-        hasFind();
     }
 
     @Override
-    public void analystsObject(VirtualMachine attach) {
+    public boolean analystsObject(VirtualMachine attach) {
+        if(prefix == null){
+            debugWebSocket.sendInfo("struts未获取路由前缀先跳过");
+            return false;
+        }
+        debugWebSocket.sendInfo("开始分析struts");
         for (ObjectReference strutsObject : this.strutsObjects) {
             if (strutsObject.referenceType().name().equals("org.apache.struts.config.impl.ModuleConfigImpl")) {
                 analystsStruts1(strutsObject);
@@ -63,6 +70,8 @@ public class Struts extends AbstractDataWrapper {
                 analystsStruts2(strutsObject);
             }
         }
+        debugWebSocket.sendSuccess("结束分析struts");
+        return true;
     }
 
     @Override
@@ -133,7 +142,6 @@ public class Struts extends AbstractDataWrapper {
     }
 
     private void analystsStruts2(ObjectReference strutsObject) {
-        hasFind();
         debugWebSocket.sendSuccess("发现并分析struts路由");
         ObjectReference runtimeConfiguration = getFieldObject(strutsObject, "runtimeConfiguration");
         ObjectReference namespaceActionConfigs = getFieldObject(runtimeConfiguration, "namespaceActionConfigs");
@@ -168,13 +176,18 @@ public class Struts extends AbstractDataWrapper {
         return "";
     }
 
+    @Override
+    public String getPrefix() {
+        return this.prefix;
+    }
+
     public void registryPrefix(String prefix) {
         this.prefix = prefix;
     }
 
     @Override
     public void clearData() {
-        clearFindFlag();
+        super.clearData();
         this.maps = new HashMap<>();
         this.strutsObjects = new HashSet<>();
         this.prefix = null;

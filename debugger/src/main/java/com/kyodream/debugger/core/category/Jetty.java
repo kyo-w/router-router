@@ -27,9 +27,6 @@ public class Jetty extends AbstractDataWrapper {
         blackList.add("org.eclipse.jetty.servlet.NoJspServlet");
     }
 
-    @Autowired
-    private Jersey jerseyHandle;
-
     private HashMap<String, String> maps = new HashMap<>();
     private String version;
     private Set<ObjectReference> jettyObjects = new HashSet<>();
@@ -37,27 +34,31 @@ public class Jetty extends AbstractDataWrapper {
     @Autowired
     private DebugWebSocket debugWebSocket;
 
-    @Autowired
-    private Struts struts;
-
     private VirtualMachine vm;
+
+    @Autowired
+    private Handler handler;
 
     @Override
     public void addAnalysisObject(Set<ObjectReference> objectReference) {
+        if (objectReference.size() > 0) {
+            hasFind();
+        }
         debugWebSocket.sendInfo("发现jetty对象");
         this.jettyObjects.addAll(objectReference);
     }
 
     @Override
-    public void analystsObject(VirtualMachine attach) {
+    public boolean analystsObject(VirtualMachine attach) {
         vm = attach;
         handleVersion(attach);
-        hasFind();
         debugWebSocket.sendInfo("开始分析jetty");
         for (ObjectReference jettyObject : jettyObjects) {
-            selectorHandle(jettyObject);
+            handleWebAppContextOrServletContext(jettyObject);
         }
-        debugWebSocket.sendInfo("结束分析jetty");
+        handler.analystsPrefixHandler(vm);
+        debugWebSocket.sendSuccess("结束分析jetty");
+        return true;
     }
 
     @Override
@@ -65,33 +66,13 @@ public class Jetty extends AbstractDataWrapper {
         this.handleOrPlugin = "jetty";
     }
 
-    private void selectorHandle(ObjectReference jettyObject) {
-        String handleName = jettyObject.referenceType().name();
-        if (handleName != null) {
-            if (handleName.contains("ServletContextHandler")) {
-                debugWebSocket.sendSuccess("发现ServletContextHandler");
-                handlerServletContext(jettyObject, "");
-            } else if (handleName.contains("WebAppContext")) {
-                debugWebSocket.sendSuccess("发现WebAppContext");
-                handleWebAppContext(jettyObject, "");
-            }
-        }
-    }
-
-    private void handleWebAppContext(ObjectReference handler, String prefix) {
+    private void handleWebAppContextOrServletContext(ObjectReference handler) {
         String rawContextPath = getFieldObject(handler, "_contextPath").toString();
         String contextPath = Format.doubleDot(rawContextPath);
         ObjectReference servletHandler = getFieldObject(handler, "_servletHandler");
         ArrayReference servletMappings = (ArrayReference) getFieldObject(servletHandler, "_servletMappings");
         HashMap<String, String> servletAliasName = getServletAliasName(servletHandler);
-        handlerServletMappingObject(servletMappings, prefix + contextPath, servletAliasName, servletHandler);
-    }
-
-    private void handlerServletContext(ObjectReference handler, String prefix) {
-        ObjectReference servletHandler = getFieldObject(handler, "_servletHandler");
-        ArrayReference servletMappings = (ArrayReference) getFieldObject(servletHandler, "_servletMappings");
-        HashMap<String, String> servletAliasName = getServletAliasName(servletHandler);
-        handlerServletMappingObject(servletMappings, prefix, servletAliasName, servletHandler);
+        handlerServletMappingObject(servletMappings, contextPath, servletAliasName, servletHandler);
     }
 
     private HashMap<String, String> getServletAliasName(ObjectReference servletHandler) {
@@ -115,45 +96,13 @@ public class Jetty extends AbstractDataWrapper {
             for (Value pathSpec : pathSpecs.getValues()) {
                 String rawResult = ((StringReference) pathSpec).value();
                 String url = Format.doubleSlash(prefix + rawResult);
-                if (jerseyHandle.getDiscoveryClass().contains(className)) {
-                    if (rawResult.endsWith("*")) {
-                        jerseyHandle.registryPrefix(url.substring(0, url.length() - 1));
-                        jerseyHandle.analystsObject(vm);
-                    }
-                }
-                if (className.equals("org.apache.struts.action.ActionServlet")) {
-                    if (!url.startsWith("/")) {
-                        struts.registryPrefix(prefix + "*." + url);
-                    } else {
-                        struts.registryPrefix(prefix + url + "/*");
-                    }
-                    struts.registryPrefix(url);
-                    struts.analystsObject(vm);
-                }
+                String fullName = Format.doubleSlash(prefix + "/" + url);
+                handler.registryPrefix(fullName, className);
+                handler.handlerMagicModificationFramework(vm, fullName, className, classNameMap);
                 if (!blackList.contains(className)) {
                     maps.put(url, className);
                 }
             }
-        }
-
-        if (struts.getStrutsVersion() == 2) {
-            ArrayReference filterMappings = (ArrayReference) getFieldObject(servletHandler, "_filterMappings");
-            filterMappings.getValues().stream().forEach((Value filterMapping) -> {
-                ObjectReference filterMappingRef = (ObjectReference) filterMapping;
-                ObjectReference holderRef = getFieldObject(filterMappingRef, "_holder");
-                StringReference classNameRef = (StringReference) getFieldObject(holderRef, "_className");
-                String url = null;
-                if (classNameRef.value().equals("org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter") ||
-                        classNameRef.value().equals("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter")) {
-                    ArrayReference pathSpecsArray = (ArrayReference) getFieldObject(filterMappingRef, "_pathSpecs");
-                    StringReference urlRef = (StringReference) pathSpecsArray.getValue(0);
-                    url = urlRef.value();
-                }
-                if (url != null) {
-                    struts.registryPrefix(url);
-                    struts.analystsObject(vm);
-                }
-            });
         }
     }
 
@@ -169,7 +118,7 @@ public class Jetty extends AbstractDataWrapper {
 
     @Override
     public void clearData() {
-        clearFindFlag();
+        super.clearData();
         maps = new HashMap<>();
         this.jettyObjects = new HashSet<>();
         version = "";

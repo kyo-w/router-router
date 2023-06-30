@@ -58,3 +58,10 @@ export function getSpringPrefix() {
       method: 'get'
   })
 }
+
+export function getFilterMap(){
+    return request({
+        url: '/data/filter',
+        method: 'get'
+    })
+}

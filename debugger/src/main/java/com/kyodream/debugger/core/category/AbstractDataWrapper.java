@@ -13,7 +13,9 @@ import java.util.Set;
  * 每一个中间件或者插件的抽象类
  * <p>
  * 一个基本逻辑： 执行线程遍历目标JVM所有的对象，每一个AbstractDataWrapper子类需要提供
+ * <p>
  * 一些类来用于获取自己想要的对象，这个动作由getDiscoveryClass方法支持，
+ * <p>
  * 在遍历完成后，执行线程会把找到的对象注入到每一个中间件或者插件，这个操作由addAnalysisObject提供
  * 执行线程在处理完上述操作之后，会向目标JVM下断点，每一个AbstractDataWrapper都要提供
  * 一些类来给执行线程下断点。
@@ -26,6 +28,12 @@ public abstract class AbstractDataWrapper implements DataWrapper {
     @Autowired
     DebugWebSocket debugWebSocket;
     private boolean isFind = false;
+
+    private boolean isCompleteAnalysts = false;
+
+    public boolean isCompleteAnalysts(){
+        return isCompleteAnalysts;
+    }
 
     @Override
     public boolean isFind() {
@@ -45,12 +53,17 @@ public abstract class AbstractDataWrapper implements DataWrapper {
 
     abstract public void addAnalysisObject(Set<ObjectReference> objectReference);
 
-
-    public void analystsObject(VirtualMachine attach) {
-    }
-
+    abstract public boolean analystsObject(VirtualMachine attach);
 
     abstract public void setHandleOrPlugin();
+
+    public void startAnalysts(VirtualMachine vm) {
+        this.isCompleteAnalysts = false;
+        if (analystsObject(vm)) {
+            this.isCompleteAnalysts = true;
+        }
+    }
+
     protected ObjectReference getFieldObject(ObjectReference objectReference, String fieldString) {
         ObjectReference result = null;
         try {
@@ -62,4 +75,8 @@ public abstract class AbstractDataWrapper implements DataWrapper {
         return result;
     }
 
+    public void clearData(){
+        this.isCompleteAnalysts = false;
+        this.isFind  = false;
+    }
 }

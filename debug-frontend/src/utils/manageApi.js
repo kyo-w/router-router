@@ -29,3 +29,9 @@ export function analystApi(){
   })
 }
 
+export function closeConnectApi(){
+  return request({
+    url : "/mg/close/connect",
+    method: 'get'
+  })
+}

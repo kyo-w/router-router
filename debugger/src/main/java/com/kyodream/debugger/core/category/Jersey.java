@@ -18,7 +18,7 @@ import java.util.*;
  */
 @Component
 @Slf4j
-public class Jersey extends AbstractDataWrapper {
+public class Jersey extends AbstractDataWrapper implements Plugin {
     public static HashMap jerseyUrl = new HashMap();
     private Set<ObjectReference> jerseyObjects = new HashSet<>();
 
@@ -29,16 +29,18 @@ public class Jersey extends AbstractDataWrapper {
 
     @Override
     public void addAnalysisObject(Set<ObjectReference> objectReference) {
+        if(objectReference.size() > 0){
+            hasFind();
+        }
         debugWebSocket.sendInfo("发现jersey插件对象");
         jerseyObjects.addAll(objectReference);
-        hasFind();
     }
 
     @Override
-    public void analystsObject(VirtualMachine attach) {
+    public boolean analystsObject(VirtualMachine attach) {
         if (prefix == null) {
-            debugWebSocket.sendInfo("还分析获取jersey前缀,跳过");
-            return;
+            debugWebSocket.sendInfo("未分析获取jersey前缀,跳过");
+            return false;
         }
         debugWebSocket.sendInfo("开始分析jersey");
         for (ObjectReference jerseyObject : jerseyObjects) {
@@ -55,7 +57,8 @@ public class Jersey extends AbstractDataWrapper {
                 e.printStackTrace();
             }
         }
-        debugWebSocket.sendInfo("分析jersey完成");
+        debugWebSocket.sendSuccess("分析jersey完成");
+        return true;
     }
 
     @Override
@@ -73,7 +76,8 @@ public class Jersey extends AbstractDataWrapper {
             String className = ((StringReference) getFieldObject(resourceClass, "name")).value();
             ObjectReference uriPath = getFieldObject(resource, "uriPath");
             String url = ((StringReference) getFieldObject(uriPath, "value")).value();
-            jerseyUrl.put(Format.doubleSlash(prefix + url + "(/?)"), className);
+            String replace = prefix.replace("*", "/" + url);
+            jerseyUrl.put(Format.doubleSlash(replace), className);
         }
     }
 
@@ -89,7 +93,7 @@ public class Jersey extends AbstractDataWrapper {
 
     @Override
     public void clearData() {
-        clearFindFlag();
+        super.clearData();
         jerseyUrl = new HashMap();
         jerseyObjects = new HashSet<>();
         prefix = null;
@@ -103,6 +107,12 @@ public class Jersey extends AbstractDataWrapper {
         return result;
     }
 
+    @Override
+    public String getPrefix() {
+        return this.prefix;
+    }
+
+    @Override
     public void registryPrefix(String prefix) {
         this.prefix = prefix;
     }
@@ -169,7 +179,8 @@ public class Jersey extends AbstractDataWrapper {
                     }
                 }
             }
-            jerseyUrl.put(Format.doubleSlash(prefix + rawUrl + "(/*?)"), className);
+            String replace = prefix.replace("*", "/" + rawUrl + "(/*?)");
+            jerseyUrl.put(Format.doubleSlash(replace), className);
         }
     }
 

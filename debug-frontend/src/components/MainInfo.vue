@@ -34,6 +34,8 @@
           <el-button type="danger" @click="emptyButton">未授权探测</el-button>
           <el-button type="danger" @click="cleanData">置空数据</el-button>
           <el-button type="danger" @click="exportData">一键导出(xls)</el-button>
+          <el-button type="danger" @click="closeConnect">关闭连接</el-button>
+
         </el-card>
       </div>
     </el-col>
@@ -42,7 +44,10 @@
     <el-col :span="4">
       <div style="height: 500px">
         <el-menu class="el-menu-demo" mode="el-menu-vertical-demo" @select="handleSelect" v-for="item in targets">
-          <el-menu-item :index="item"><img :src="'/static/' + item + '.png'">{{ item }}</el-menu-item>
+          <el-menu-item :index="item"><img :src="'/static/' + item + '.png'" style="margin-right: 20px">
+<!--            <el-text tag="i" class="button_middleware">{{ item }}</el-text>-->
+            <span class="button_middleware">{{ item }}</span>
+          </el-menu-item>
         </el-menu>
       </div>
     </el-col>
@@ -77,7 +82,7 @@ import {
 } from "../utils/manageApi";
 import {getArgApi} from "../utils/settingApi";
 import {getListDataApi, exportAllApi} from "../utils/dataApi";
-
+import {closeConnectApi} from "../utils/manageApi";
 import BugInfo from './BugInfo.vue';
 import Constant from "@/utils/constant";
 import {onBeforeUnmount} from "vue";
@@ -175,16 +180,30 @@ export default {
         if (res.data.msg.jersey) {
           lists.push("jersey")
         }
-
+        lists.push("filter")
         console.log(lists)
         this.targets = lists;
       })
     },
     analysts() {
+      if(!this.statusFlag){
+        Message('消息', "还未连接", 'error')
+        return
+      }
       analystApi().then(res => {
         this.logInfo = []
         Message('消息', res.data.msg, 'info')
         this.connectLogDrawer = true
+      })
+    },
+    closeConnect(){
+      closeConnectApi().then(res=>{
+        if(res.data.msg){
+          this.statusFlag = false
+          Message('消息', "关闭远程连接成功", 'success')
+        }else{
+          Message('消息', "存在扫描时不支持阻断关闭", 'error')
+        }
       })
     }
   },
@@ -286,5 +305,10 @@ img {
 
 .Fail {
   color: #ff4949;
+}
+.button_middleware{
+  color: #606266;
+  font-size: 20px;
+  font-family: STXihei, "Microsoft YaHei";
 }
 </style>

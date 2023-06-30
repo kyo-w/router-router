@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
-public class SpringMvc extends AbstractDataWrapper {
+public class SpringMvc extends AbstractDataWrapper implements Plugin {
     private static Set<String> discoveryClass = new HashSet<>();
 
     static {
@@ -40,7 +40,7 @@ public class SpringMvc extends AbstractDataWrapper {
 
     private static boolean modify = false;
 
-    public void hasModify(){
+    public void hasModify() {
         modify = true;
     }
 
@@ -49,13 +49,16 @@ public class SpringMvc extends AbstractDataWrapper {
         return discoveryClass;
     }
 
+    @Override
     public void registryPrefix(String prefix) {
         this.prefix = prefix;
     }
 
     @Override
     public void addAnalysisObject(Set<ObjectReference> objectReference) {
-        hasFind();
+        if (objectReference.size() > 0) {
+            hasFind();
+        }
         objectReference.forEach(elem -> {
             String name = elem.referenceType().name();
             String[] parts = name.split("\\.");
@@ -66,7 +69,11 @@ public class SpringMvc extends AbstractDataWrapper {
     }
 
     @Override
-    public void analystsObject(VirtualMachine attach) {
+    public boolean analystsObject(VirtualMachine attach) {
+        if (prefix == null) {
+            debugWebSocket.sendInfo("spring还未获取路由前缀，先跳过");
+            return false;
+        }
         debugWebSocket.sendInfo("开始分析spring");
         for (ObjectReference springObject : this.springObjects) {
             String name = springObject.referenceType().name();
@@ -81,7 +88,8 @@ public class SpringMvc extends AbstractDataWrapper {
                 handlerRequestMappingHandlerMapping(springObject);
             }
         }
-        debugWebSocket.sendInfo("分析spring结束");
+        debugWebSocket.sendSuccess("分析spring结束");
+        return true;
     }
 
     private void handlerRequestMappingHandlerMapping(ObjectReference springObject) {
@@ -126,10 +134,10 @@ public class SpringMvc extends AbstractDataWrapper {
                             while (iterator1.hasNext()) {
                                 ObjectReference next1 = iterator1.next();
                                 String url = ((StringReference) next1).value();
-                                if(!modify) {
+                                if (!modify) {
                                     String fullUrl = this.prefix.replace("*", "/" + url);
                                     requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
-                                }else{
+                                } else {
                                     requestMappingHandlerMapping.put(url, className);
                                 }
                             }
@@ -143,10 +151,10 @@ public class SpringMvc extends AbstractDataWrapper {
                             if (hashSetObjectRef != null) {
                                 debugWebSocket.sendInfo("修正成功");
                                 hashSetObjectRef.forEach(urlStringRef -> {
-                                    if(!modify) {
+                                    if (!modify) {
                                         String fullUrl = this.prefix.replace("*", "/" + ((StringReference) urlStringRef).value());
                                         requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
-                                    }else{
+                                    } else {
                                         requestMappingHandlerMapping.put(((StringReference) urlStringRef).value(), className);
                                     }
                                 });
@@ -166,10 +174,10 @@ public class SpringMvc extends AbstractDataWrapper {
                     while (treeSetIterator.hasNext()) {
                         ObjectReference pathPattern = treeSetIterator.next();
                         StringReference patternString = (StringReference) getFieldObject(pathPattern, "patternString");
-                        if(!modify) {
+                        if (!modify) {
                             String fullUrl = this.prefix.replace("*", "/" + patternString.value());
                             requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
-                        }else{
+                        } else {
                             requestMappingHandlerMapping.put(patternString.value(), className);
                         }
                     }
@@ -203,10 +211,10 @@ public class SpringMvc extends AbstractDataWrapper {
                 Iterator<ObjectReference> iterator1 = unmodifiableSet.iterator();
                 while (iterator1.hasNext()) {
                     String url = ((StringReference) iterator1.next()).value();
-                    if(!modify) {
+                    if (!modify) {
                         String fullUrl = this.prefix.replace("*", "/" + url);
                         requestMappingHandlerMapping.put(fullUrl, className);
-                    }else{
+                    } else {
                         requestMappingHandlerMapping.put(url, className);
                     }
                 }
@@ -223,10 +231,10 @@ public class SpringMvc extends AbstractDataWrapper {
             String url = ((StringReference) next.getKey()).value();
             ObjectReference value = next.getValue();
             String className = value.referenceType().name();
-            if(!modify){
+            if (!modify) {
                 String fullUrl = this.prefix.replace("*", "/" + url);
                 abstractUrlHandlerMapping.put(Format.doubleSlash(fullUrl), className);
-            }else{
+            } else {
                 abstractUrlHandlerMapping.put(url, className);
             }
         }
@@ -251,16 +259,17 @@ public class SpringMvc extends AbstractDataWrapper {
         return "";
     }
 
-    public String getPrefix(){
+    public String getPrefix() {
         return prefix;
     }
 
-    public boolean getModify(){
+    public boolean getModify() {
         return modify;
     }
+
     @Override
     public void clearData() {
-        clearFindFlag();
+        super.clearData();
         this.prefix = null;
         modify = false;
         this.abstractUrlHandlerMapping = new HashMap<>();

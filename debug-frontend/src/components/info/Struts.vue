@@ -1,5 +1,7 @@
 <template>
-  <div v-if="exist">
+  <div v-loading="loading"
+       element-loading-text="未完成分析"
+  >
     <el-container>
       <el-main>
         <el-table
@@ -8,13 +10,11 @@
           height="400">
           <el-table-column
             prop="api"
-            label="接口"
-            width="300">
+            label="接口">
           </el-table-column>
           <el-table-column
             prop="name"
-            label="映射类"
-            width="600">
+            label="映射类">
           </el-table-column>
         </el-table>
       </el-main>
@@ -35,7 +35,7 @@ export default {
   data() {
     return {
       tableData: [],
-      exist: false,
+      loading: true,
       count: 0,
       moduleName:""
     }
@@ -43,14 +43,12 @@ export default {
   async created() {
     await existTargetApi("struts").then(res => {
       if (!res.data.msg) {
-        Message('路由', 'Struts路由获取失败', 'error')
-        this.$router.push("/main")
-        this.exist = false
+        this.loading = true
       } else {
-        this.exist = true
+        this.loading = false
       }
     })
-    if (this.exist) {
+    if (!this.loading) {
       getTargetDataApi('struts').then(res => {
         let mapkey = Object.keys(res.data.msg)
         this.count = mapkey.length
@@ -67,17 +65,28 @@ export default {
   },
   mounted() {
     const timer = setInterval(()=>{
-      getTargetDataApi('struts').then(res => {
-        let mapkey = Object.keys(res.data.msg)
-        this.count = mapkey.length
-        let tmpList = []
-        for(let i=0; i < mapkey.length; i++){
-          let data = new Object()
-          data.api = mapkey[i]
-          data.name = res.data.msg[mapkey[i]]
-          tmpList.push(data)
+      if(!this.loading){
+        clearInterval(timer)
+        return
+      }
+      existTargetApi("struts").then(res => {
+        if (!res.data.msg) {
+          this.loading = true
+        } else {
+          this.loading = false
+          getTargetDataApi('struts').then(res => {
+            let mapkey = Object.keys(res.data.msg)
+            this.count = mapkey.length
+            let tmpList = []
+            for(let i=0; i < mapkey.length; i++){
+              let data = new Object()
+              data.api = mapkey[i]
+              data.name = res.data.msg[mapkey[i]]
+              tmpList.push(data)
+            }
+            this.tableData = tmpList
+          })
         }
-        this.tableData = tmpList
       })
     }, 1000)
     onBeforeUnmount(() => {

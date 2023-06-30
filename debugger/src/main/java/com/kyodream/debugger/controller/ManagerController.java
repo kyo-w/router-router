@@ -52,4 +52,10 @@ public class ManagerController {
         bugManger.cleanData();
         return new ApiResponse(200, "complete");
     }
+
+    @GetMapping("/close/connect")
+    public ApiResponse closeConnect() {
+        boolean completeClose = bugManger.closeConnect();
+        return new ApiResponse(200, completeClose);
+    }
 }
