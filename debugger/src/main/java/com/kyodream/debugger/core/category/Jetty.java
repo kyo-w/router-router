@@ -17,53 +17,30 @@ import java.util.*;
  */
 @Component
 @Slf4j
-public class Jetty extends AbstractDataWrapper {
-    private static Set<String> discoveryClass = new HashSet<>();
+public class Jetty extends DefaultHandler {
     private static Set<String> blackList = new HashSet<String>();
 
     static {
-        discoveryClass.add("org.eclipse.jetty.webapp.WebAppContext");
-        discoveryClass.add("org.eclipse.jetty.servlet.ServletContextHandler");
         blackList.add("org.eclipse.jetty.servlet.NoJspServlet");
     }
 
-    private HashMap<String, String> maps = new HashMap<>();
-    private String version;
-    private Set<ObjectReference> jettyObjects = new HashSet<>();
-
-    @Autowired
-    private DebugWebSocket debugWebSocket;
-
     private VirtualMachine vm;
 
-    @Autowired
-    private Handler handler;
 
     @Override
-    public void addAnalysisObject(Set<ObjectReference> objectReference) {
-        if (objectReference.size() > 0) {
-            hasFind();
-        }
-        debugWebSocket.sendInfo("发现jetty对象");
-        this.jettyObjects.addAll(objectReference);
-    }
-
-    @Override
-    public boolean analystsObject(VirtualMachine attach) {
-        vm = attach;
-        handleVersion(attach);
+    public void analystsHandlerObject(VirtualMachine vm) {
+        this.vm = vm;
+        handleVersion(vm);
         debugWebSocket.sendInfo("开始分析jetty");
-        for (ObjectReference jettyObject : jettyObjects) {
+        for (ObjectReference jettyObject : getAnalystsObject()) {
             handleWebAppContextOrServletContext(jettyObject);
         }
-        handler.analystsPrefixHandler(vm);
         debugWebSocket.sendSuccess("结束分析jetty");
-        return true;
     }
 
     @Override
-    public void setHandleOrPlugin() {
-        this.handleOrPlugin = "jetty";
+    public void setHandleOrFrameworkName() {
+        this.handleOrFrameworkName = "jetty";
     }
 
     private void handleWebAppContextOrServletContext(ObjectReference handler) {
@@ -71,24 +48,31 @@ public class Jetty extends AbstractDataWrapper {
         String contextPath = Format.doubleDot(rawContextPath);
         ObjectReference servletHandler = getFieldObject(handler, "_servletHandler");
         ArrayReference servletMappings = (ArrayReference) getFieldObject(servletHandler, "_servletMappings");
-        HashMap<String, String> servletAliasName = getServletAliasName(servletHandler);
-        handlerServletMappingObject(servletMappings, contextPath, servletAliasName, servletHandler);
+
+        HashMap<String, ObjectReference> classNameObjectRef = new HashMap<>();
+        HashMap<String, String> servletAliasName = getServletAliasName(servletHandler, classNameObjectRef);
+        handlerServletMappingObject(servletMappings, contextPath, servletAliasName, classNameObjectRef);
     }
 
-    private HashMap<String, String> getServletAliasName(ObjectReference servletHandler) {
+    private HashMap<String, String> getServletAliasName(ObjectReference servletHandler, HashMap<String, ObjectReference> classNameObjectRef) {
         HashMap<String, String> result = new HashMap<>();
         ArrayReference servlets = (ArrayReference) getFieldObject(servletHandler, "_servlets");
         for (Value servlet : servlets.getValues()) {
             ObjectReference servletObject = (ObjectReference) servlet;
             StringReference name = (StringReference) getFieldObject(servletObject, "_name");
             StringReference className = (StringReference) getFieldObject(servletObject, "_className");
+            ObjectReference servletRef = getFieldObject(servletObject, "_servlet");
+            ObjectReference servletInstanceRef = getFieldObject(servletRef, "_servlet");
+            classNameObjectRef.put(className.value(), servletInstanceRef);
             result.put(name.value(), className.value());
         }
         return result;
     }
 
-    private void handlerServletMappingObject(ArrayReference servletMappings, String prefix, HashMap<String, String> classNameMapping, ObjectReference servletHandler) {
-
+    private void handlerServletMappingObject(ArrayReference servletMappings,
+                                             String prefix,
+                                             HashMap<String, String> classNameMapping,
+                                             HashMap<String, ObjectReference> classNameObjectRef) {
         for (Value servletMapping : servletMappings.getValues()) {
             String classNameMap = ((StringReference) getFieldObject((ObjectReference) servletMapping, "_servletName")).value();
             String className = classNameMapping.get(classNameMap);
@@ -97,35 +81,27 @@ public class Jetty extends AbstractDataWrapper {
                 String rawResult = ((StringReference) pathSpec).value();
                 String url = Format.doubleSlash(prefix + rawResult);
                 String fullName = Format.doubleSlash(prefix + "/" + url);
-                handler.registryPrefix(fullName, className);
-                handler.handlerMagicModificationFramework(vm, fullName, className, classNameMap);
+                RegistryType registryType = registryPrefix(fullName, className);
+                if(registryType != RegistryType.None){
+                    registryAnalystsObject(registryType, classNameObjectRef.get(className));
+                }
+                boolean find = handlerMagicModificationFramework(vm, fullName, className, className);
+                if(find){
+                    springMvc.addAnalystsObject(classNameObjectRef.get(className));
+                }
                 if (!blackList.contains(className)) {
-                    maps.put(url, className);
+                    getDataWrapper().put(url, className);
                 }
             }
         }
     }
 
     @Override
-    public HashMap<String, String> getDataWrapper() {
-        return maps;
-    }
-
-    @Override
-    public String getVersion() {
-        return version;
-    }
-
-    @Override
-    public void clearData() {
-        super.clearData();
-        maps = new HashMap<>();
-        this.jettyObjects = new HashSet<>();
-        version = "";
-    }
-
-    @Override
     public Set<String> getDiscoveryClass() {
+        if(this.discoveryClass.size() == 0) {
+            discoveryClass.add("org.eclipse.jetty.webapp.WebAppContext");
+            discoveryClass.add("org.eclipse.jetty.servlet.ServletContextHandler");
+        }
         return discoveryClass;
     }
 

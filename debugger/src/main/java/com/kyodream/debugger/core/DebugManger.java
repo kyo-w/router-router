@@ -4,6 +4,7 @@ import com.kyodream.debugger.core.category.*;
 import com.kyodream.debugger.core.thread.DebuggerThread;
 import com.kyodream.debugger.pojo.DebuggerArgs;
 import com.kyodream.debugger.service.DebugWebSocket;
+import com.sun.jdi.ObjectReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
@@ -16,7 +17,7 @@ import java.util.*;
 
 @Component
 public class DebugManger {
-    private HashMap<String, AbstractDataWrapper> dataWrappers = new HashMap<>();
+    private HashMap<String, DefaultHandlerFramework> handlerOrFramework = new HashMap<>();
     private DebuggerArgs debuggerArgs = null;
     private DebugWebSocket debugWebSocket;
 
@@ -26,23 +27,24 @@ public class DebugManger {
 
     @Autowired
     public DebugManger(SpringMvc spring, Tomcat tomcat, Jetty jetty, Jersey jersey, Struts struts, Filter filter, DebugWebSocket debugWebSocket) {
-        dataWrappers.put("spring", spring);
-        dataWrappers.put("tomcat", tomcat);
-        dataWrappers.put("jetty", jetty);
-        dataWrappers.put("jersey", jersey);
-        dataWrappers.put("struts", struts);
-        dataWrappers.put("filter", filter);
-        dataWrappers.values().forEach(handleOrPlugin -> {
-            handleOrPlugin.setHandleOrPlugin();
+        handlerOrFramework.put("spring", spring);
+        handlerOrFramework.put("tomcat", tomcat);
+        handlerOrFramework.put("jetty", jetty);
+        handlerOrFramework.put("jersey", jersey);
+        handlerOrFramework.put("struts", struts);
+        handlerOrFramework.put("filter", filter);
+        handlerOrFramework.values().forEach(handleOrPlugin -> {
+            handleOrPlugin.setHandleOrFrameworkName();
         });
         this.debugWebSocket = debugWebSocket;
     }
 
-    public void cleanData() {
-        Iterator<Map.Entry<String, AbstractDataWrapper>> iterator = dataWrappers.entrySet().iterator();
+    public void clearAll() {
+        Iterator<Map.Entry<String, DefaultHandlerFramework>> iterator = handlerOrFramework.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, AbstractDataWrapper> next = iterator.next();
-            next.getValue().clearData();
+            Map.Entry<String, DefaultHandlerFramework> next = iterator.next();
+            next.getValue().clearAny();
+            DebuggerThread.clearAllFlag();
         }
     }
 
@@ -97,8 +99,8 @@ public class DebugManger {
         this.vm.dispose();
     }
 
-    public HashMap<String, AbstractDataWrapper> getAllDataWrapper() {
-        return dataWrappers;
+    public HashMap<String, DefaultHandlerFramework> getAllDataWrapper() {
+        return handlerOrFramework;
     }
 
     public boolean existConnect() {

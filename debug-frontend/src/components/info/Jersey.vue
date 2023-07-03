@@ -42,29 +42,6 @@ export default {
       count: 0,
     }
   },
-  async created() {
-    await existTargetApi("jersey").then(res => {
-      if (!res.data.msg) {
-        this.loading = true
-      } else {
-        this.loading = false
-      }
-    })
-    if (!this.loading) {
-      getTargetDataApi('jersey').then(res => {
-        let mapkey = Object.keys(res.data.msg)
-        this.count = mapkey.length
-        let tmpList = []
-        for(let i=0; i < mapkey.length; i++){
-          let data = new Object()
-          data.api = mapkey[i]
-          data.name = res.data.msg[mapkey[i]]
-          tmpList.push(data)
-        }
-        this.tableData = tmpList
-      })
-    }
-  },
   mounted() {
     const timer = setInterval(()=>{
       if(!this.loading){

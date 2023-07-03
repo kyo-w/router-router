@@ -57,7 +57,7 @@ public class DataController {
 
     @GetMapping("/modify/spring")
     public ApiResponse springModify() {
-        HashMap<String, AbstractDataWrapper> allDataWrapper = bugManger.getAllDataWrapper();
+        HashMap<String, DefaultHandlerFramework> allDataWrapper = bugManger.getAllDataWrapper();
         SpringMvc spring = (SpringMvc)allDataWrapper.get("spring");
         if(spring.getModify()){
             return new ApiResponse(200, true);
@@ -68,22 +68,22 @@ public class DataController {
 
     @GetMapping("/modify/spring/prefix")
     public ApiResponse springPrefix() {
-        HashMap<String, AbstractDataWrapper> allDataWrapper = bugManger.getAllDataWrapper();
+        HashMap<String, DefaultHandlerFramework> allDataWrapper = bugManger.getAllDataWrapper();
         SpringMvc spring = (SpringMvc)allDataWrapper.get("spring");
         return new ApiResponse(200, spring.getPrefix());
     }
 
     @GetMapping("/exist/{target}")
     public ApiResponse existTarget(@PathVariable("target") String target) {
-        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllDataWrapper();
-        AbstractDataWrapper abstractDataWrapper = allDataStatus.get(target);
-        return new ApiResponse(200, abstractDataWrapper.isCompleteAnalysts());
+        HashMap<String, DefaultHandlerFramework> allDataStatus = bugManger.getAllDataWrapper();
+        DefaultHandlerFramework dataWrapper = allDataStatus.get(target);
+        return new ApiResponse(200, dataWrapper.ifCompleteAnalysts());
     }
 
     @GetMapping("/version/{target}")
     public ApiResponse getVersion(@PathVariable("target") String target) {
-        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllDataWrapper();
-        AbstractDataWrapper abstractDataWrapper = allDataStatus.get(target);
+        HashMap<String, DefaultHandlerFramework> allDataStatus = bugManger.getAllDataWrapper();
+        DefaultHandlerFramework abstractDataWrapper = allDataStatus.get(target);
         return new ApiResponse(200, abstractDataWrapper.getVersion());
     }
 
@@ -106,14 +106,14 @@ public class DataController {
 
     @GetMapping("/existtarget")
     public ApiResponse getExistTarget() {
-        HashMap<String, AbstractDataWrapper> allDataStatus = bugManger.getAllDataWrapper();
+        HashMap<String, DefaultHandlerFramework> allDataStatus = bugManger.getAllDataWrapper();
         HashMap<String, Boolean> stringBooleanHashMap = new HashMap<>();
-        Iterator<Map.Entry<String, AbstractDataWrapper>> iterator = allDataStatus.entrySet().iterator();
+        Iterator<Map.Entry<String, DefaultHandlerFramework>> iterator = allDataStatus.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, AbstractDataWrapper> next = iterator.next();
+            Map.Entry<String, DefaultHandlerFramework> next = iterator.next();
             String key = next.getKey();
-            AbstractDataWrapper value = next.getValue();
-            boolean find = value.isFind();
+            DefaultHandlerFramework value = next.getValue();
+            boolean find = value.ifFind();
             stringBooleanHashMap.put(key, find);
         }
         return new ApiResponse(200, stringBooleanHashMap);
@@ -128,7 +128,7 @@ public class DataController {
 
     @GetMapping("/filter")
     public ApiResponse getFilterMap(){
-        HashMap<String, LinkedHashMap<String, Set<String>>> filterMap = filter.getFilterMap();
+        HashMap<String, LinkedHashMap<String, LinkedHashSet<String>>> filterMap = filter.getFilterMap();
         return new ApiResponse(200, filterMap);
     }
 }

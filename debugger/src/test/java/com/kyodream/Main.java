@@ -11,7 +11,5 @@ import java.util.List;
 
 public class Main {
     public static void main(String[] args) {
-        String path = DebuggerApplication.class.getClass().getResource("/lib/jdk8.jar").getPath();
-        System.out.println(path);
     }
 }

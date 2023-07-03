@@ -49,7 +49,7 @@ public class ManagerController {
 
     @GetMapping("/clean")
     public ApiResponse cleanData() {
-        bugManger.cleanData();
+        bugManger.clearAll();
         return new ApiResponse(200, "complete");
     }
 

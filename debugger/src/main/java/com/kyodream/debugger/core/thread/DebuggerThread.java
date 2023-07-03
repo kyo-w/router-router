@@ -1,7 +1,9 @@
 package com.kyodream.debugger.core.thread;
 
 import com.kyodream.debugger.core.DebugManger;
-import com.kyodream.debugger.core.category.AbstractDataWrapper;
+import com.kyodream.debugger.core.category.DefaultFramework;
+import com.kyodream.debugger.core.category.DefaultHandler;
+import com.kyodream.debugger.core.category.DefaultHandlerFramework;
 import com.kyodream.debugger.service.DebugWebSocket;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.ReferenceType;
@@ -17,18 +19,19 @@ public class DebuggerThread implements Runnable {
 
     private VirtualMachine vm;
 
-    private Set<AbstractDataWrapper> handles = new HashSet<>();
+    private Set<DefaultHandler> handles = new HashSet<>();
+
+    private static HashMap<DefaultHandler, AnalystsObject> handlerAnalystsObject = new HashMap<>();
 
     public DebuggerThread(DebugWebSocket debugWebSocket, DebugManger debugManger) {
         this.webSocket = debugWebSocket;
         this.debugManger = debugManger;
         this.vm = debugManger.getVm();
+        initHandler();
     }
 
     @Override
     public void run() {
-        webSocket.sendInfo("清理或初始化数据");
-        clearData();
         debugManger.setScannerComplete(false);
         log.info("创建分析线程");
 //        遍历内存Class对象
@@ -40,6 +43,7 @@ public class DebuggerThread implements Runnable {
             webSocket.sendInfo("目标支持内存访问");
         }
         scannerMemory();
+        initHandlerFlag();
         webSocket.sendInfo("完成扫描^-^");
 //        开始分析
         handleEvent();
@@ -47,44 +51,112 @@ public class DebuggerThread implements Runnable {
         webSocket.sendSuccess("完成扫描");
     }
 
-    private void clearData() {
-        HashMap<String, AbstractDataWrapper> allDataWrapper = debugManger.getAllDataWrapper();
-        allDataWrapper.values().forEach(abstractDataWrapper -> {
-            abstractDataWrapper.clearData();
+    private void initHandler() {
+        HashMap<String, DefaultHandlerFramework> handlerOrFramework = debugManger.getAllDataWrapper();
+        handlerOrFramework.values().forEach(handleOrFramework -> {
+            if (handleOrFramework instanceof DefaultHandler) {
+                this.handles.add((DefaultHandler) handleOrFramework);
+            }
+        });
+    }
+
+    private void initHandlerFlag() {
+        handlerAnalystsObject.forEach((handler, analystsObject) -> {
+            if (analystsObject.getStatus() == AnalystsObjectStatus.HasChange) {
+                handler.clearData();
+            }
         });
     }
 
     private void scannerMemory() {
-        HashMap<String, AbstractDataWrapper> allData = debugManger.getAllDataWrapper();
-        allData.values().forEach(handleOrPlugin -> {
-            if (handleOrPlugin.isFind()) {
-                return;
-            }
-//            获取插件或者中间件的每一个发现对象类
-            Set<String> discoveryClass = handleOrPlugin.getDiscoveryClass();
-            discoveryClass.forEach((String className) -> {
-//                从VM中获取发现对象类
-                List<ReferenceType> referenceTypes = vm.classesByName(className);
-                referenceTypes.forEach((ReferenceType referenceType) -> {
+        this.handles.forEach(handler -> {
+            Set<String> allClassName = handler.getDiscoveryClass();
+            allClassName.forEach(discoveryClass -> {
+                List<ReferenceType> referenceTypes = vm.classesByName(discoveryClass);
+                for (ReferenceType referenceType : referenceTypes) {
                     List<ObjectReference> instances = referenceType.instances(0);
-                    HashSet<ObjectReference> instanceSet = new HashSet<>(instances);
-//                    注册添加
-                    handleOrPlugin.addAnalysisObject(instanceSet);
-                    handles.add(handleOrPlugin);
-                });
+                    HashSet<ObjectReference> objectReferences = new HashSet<>(instances);
+                    if(objectReferences.size() != 0) {
+                        handler.addAnalystsObjectSet(objectReferences);
+                        judgeHandleExistNewObject(handler, objectReferences);
+                    }
+                }
             });
         });
+    }
 
+    private void judgeHandleExistNewObject(DefaultHandler handle, HashSet<ObjectReference> instanceSet) {
+        if (handlerAnalystsObject.get(handle) == null) {
+            handlerAnalystsObject.put(handle, new AnalystsObject(instanceSet.size(), AnalystsObjectStatus.Init));
+        } else {
+            if (handlerAnalystsObject.get(handle).getSize() != instanceSet.size()) {
+                handlerAnalystsObject.get(handle).setSize(instanceSet.size());
+                handlerAnalystsObject.get(handle).setStatus(AnalystsObjectStatus.HasChange);
+            } else {
+                handlerAnalystsObject.get(handle).setStatus(AnalystsObjectStatus.NotChange);
+            }
+        }
     }
 
     private void handleEvent() {
-        for (AbstractDataWrapper handle : handles) {
+        for (DefaultHandler handle : handlerAnalystsObject.keySet()) {
+            if (!judgeHandleIfChangeOrInit(handle)) {
+                webSocket.sendInfo("当前内存中：" + handle.getName() + "无新的路由对象");
+                continue;
+            }
             try {
                 handle.startAnalysts(vm);
             } catch (Exception e) {
                 e.printStackTrace();
-                webSocket.sendFail(handle.handleOrPlugin + "处理过程中出现无法处理的异常!");
+                webSocket.sendFail(handle.getName() + "处理过程中出现无法处理的异常!");
             }
         }
     }
+
+    private boolean judgeHandleIfChangeOrInit(DefaultHandler handler) {
+        AnalystsObjectStatus status = handlerAnalystsObject.get(handler).getStatus();
+        if (status == AnalystsObjectStatus.HasChange || status == AnalystsObjectStatus.Init) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public static void clearAllFlag(){
+        handlerAnalystsObject.values().forEach(statusObject->{
+            statusObject.setSize(0);
+        });
+    }
+}
+
+class AnalystsObject {
+    private Integer size;
+    private AnalystsObjectStatus status;
+
+    public AnalystsObject(Integer size, AnalystsObjectStatus status) {
+        this.size = size;
+        this.status = status;
+    }
+
+    public Integer getSize() {
+        return size;
+    }
+
+    public void setSize(Integer size) {
+        this.size = size;
+    }
+
+    public AnalystsObjectStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(AnalystsObjectStatus status) {
+        this.status = status;
+    }
+}
+
+enum AnalystsObjectStatus {
+    Init,
+    NotChange,
+    HasChange
 }

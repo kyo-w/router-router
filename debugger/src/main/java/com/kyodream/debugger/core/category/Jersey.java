@@ -18,32 +18,16 @@ import java.util.*;
  */
 @Component
 @Slf4j
-public class Jersey extends AbstractDataWrapper implements Plugin {
-    public static HashMap jerseyUrl = new HashMap();
-    private Set<ObjectReference> jerseyObjects = new HashSet<>();
-
-    private String prefix = null;
-
-    @Autowired
-    private DebugWebSocket debugWebSocket;
+public class Jersey extends DefaultFramework {
 
     @Override
-    public void addAnalysisObject(Set<ObjectReference> objectReference) {
-        if(objectReference.size() > 0){
-            hasFind();
-        }
-        debugWebSocket.sendInfo("发现jersey插件对象");
-        jerseyObjects.addAll(objectReference);
-    }
-
-    @Override
-    public boolean analystsObject(VirtualMachine attach) {
-        if (prefix == null) {
+    public boolean analystsFrameworkObject(VirtualMachine vm) {
+        if (getPrefix() == null) {
             debugWebSocket.sendInfo("未分析获取jersey前缀,跳过");
             return false;
         }
         debugWebSocket.sendInfo("开始分析jersey");
-        for (ObjectReference jerseyObject : jerseyObjects) {
+        for (ObjectReference jerseyObject : getAnalystsObject()) {
             try {
                 if (jerseyObject.referenceType().name().equals("org.glassfish.jersey.servlet.ServletContainer")) {
                     debugWebSocket.sendInfo("当前插件版本为jersey2.x");
@@ -62,8 +46,8 @@ public class Jersey extends AbstractDataWrapper implements Plugin {
     }
 
     @Override
-    public void setHandleOrPlugin() {
-        this.handleOrPlugin = "jersey";
+    public void setHandleOrFrameworkName() {
+        this.handleOrFrameworkName = "jersey";
     }
 
     private void handleJersey(ObjectReference jerseyObject) {
@@ -76,45 +60,9 @@ public class Jersey extends AbstractDataWrapper implements Plugin {
             String className = ((StringReference) getFieldObject(resourceClass, "name")).value();
             ObjectReference uriPath = getFieldObject(resource, "uriPath");
             String url = ((StringReference) getFieldObject(uriPath, "value")).value();
-            String replace = prefix.replace("*", "/" + url);
-            jerseyUrl.put(Format.doubleSlash(replace), className);
+            String replace = getPrefix().replace("*", "/" + url);
+            getDataWrapper().put(Format.doubleSlash(replace), className);
         }
-    }
-
-    @Override
-    public HashMap<String, String> getDataWrapper() {
-        return jerseyUrl;
-    }
-
-    @Override
-    public String getVersion() {
-        return "未知版本";
-    }
-
-    @Override
-    public void clearData() {
-        super.clearData();
-        jerseyUrl = new HashMap();
-        jerseyObjects = new HashSet<>();
-        prefix = null;
-    }
-
-    @Override
-    public Set<String> getDiscoveryClass() {
-        HashSet<String> result = new HashSet<>();
-        result.add("org.glassfish.jersey.servlet.ServletContainer");
-        result.add("com.sun.jersey.spi.container.servlet.ServletContainer");
-        return result;
-    }
-
-    @Override
-    public String getPrefix() {
-        return this.prefix;
-    }
-
-    @Override
-    public void registryPrefix(String prefix) {
-        this.prefix = prefix;
     }
 
     public void handleJersey2(ObjectReference root) {
@@ -179,9 +127,8 @@ public class Jersey extends AbstractDataWrapper implements Plugin {
                     }
                 }
             }
-            String replace = prefix.replace("*", "/" + rawUrl + "(/*?)");
-            jerseyUrl.put(Format.doubleSlash(replace), className);
+            String replace = getPrefix().replace("*", "/" + rawUrl + "(/*?)");
+            getDataWrapper().put(Format.doubleSlash(replace), className);
         }
     }
-
 }

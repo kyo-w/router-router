@@ -1,6 +1,5 @@
 package com.kyodream.debugger.core.category;
 
-import com.kyodream.debugger.core.analyse.ListAnalyse;
 import com.kyodream.debugger.core.analyse.MapAnalyse;
 import com.sun.jdi.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,21 +12,9 @@ import java.util.*;
  * Tomcat Filter
  */
 @Component
-public class Filter extends AbstractDataWrapper {
-    private static Set<String> discoveryClass = new HashSet<>();
-
-    static {
-        discoveryClass.add("org.apache.catalina.mapper.Mapper");
-        discoveryClass.add("org.eclipse.jetty.webapp.WebAppContext");
-        discoveryClass.add("org.eclipse.jetty.servlet.ServletContextHandler");
-//        不支持tomcat76
-//        discoveryClass.add("org.apache.tomcat.util.http.mapper.Mapper");
-    }
-
+public class Filter extends DefaultFramework {
     @Autowired
     Struts struts;
-
-    private Set<ObjectReference> tomcatOrJettyObjects = new HashSet<>();
 
     /**
      * k->(s->(v))
@@ -35,22 +22,12 @@ public class Filter extends AbstractDataWrapper {
      * s: filter ClassName
      * v: urlPatterns
      */
-    private HashMap<String, LinkedHashMap<String, Set<String>>> filterMap = new HashMap<>();
-
-    @Override
-    public Set<String> getDiscoveryClass() {
-        return discoveryClass;
-    }
+    private HashMap<String, LinkedHashMap<String, LinkedHashSet<String>>> filterMap = new HashMap<>();
 
 
     @Override
-    public void addAnalysisObject(Set<ObjectReference> objectReference) {
-        tomcatOrJettyObjects.addAll(objectReference);
-    }
-
-    @Override
-    public boolean analystsObject(VirtualMachine attach) {
-        for (ObjectReference tomcatOrJettyObjectRef : tomcatOrJettyObjects) {
+    public boolean analystsFrameworkObject(VirtualMachine vm) {
+        for (ObjectReference tomcatOrJettyObjectRef : this.getAnalystsObject()) {
             if (tomcatOrJettyObjectRef.referenceType().name().equals("org.apache.catalina.mapper.Mapper")) {
                 debugWebSocket.sendInfo("分析tomcat过滤器");
                 handleTomcat98(tomcatOrJettyObjectRef);
@@ -63,9 +40,9 @@ public class Filter extends AbstractDataWrapper {
                 debugWebSocket.sendSuccess("完成过滤器分析");
             }
         }
-        handlerStruts2();
+        registryStruts2Prefix();
         if (struts.getPrefix() != null) {
-            struts.startAnalysts(attach);
+            struts.startAnalysts(vm);
         }
         return true;
     }
@@ -87,14 +64,14 @@ public class Filter extends AbstractDataWrapper {
                 StringReference pathSpec = (StringReference) pathSpecsRefRaw;
                 Set<String> collection = this.filterMap.get(contextPathRef.value()).get(classNameRef.value());
                 if (collection == null) {
-                    this.filterMap.get(contextPathRef.value()).put(classNameRef.value(), new HashSet<>());
+                    this.filterMap.get(contextPathRef.value()).put(classNameRef.value(), new LinkedHashSet<>());
                 }
                 this.filterMap.get(contextPathRef.value()).get(classNameRef.value()).add(pathSpec.value());
             }
         }
     }
 
-    private void handlerStruts2() {
+    private void registryStruts2Prefix() {
         this.filterMap.forEach((contextPath, value) -> {
             value.forEach((className, urlPatterns) -> {
                 if (className.equals("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter")) {
@@ -130,7 +107,7 @@ public class Filter extends AbstractDataWrapper {
                 String className = filterDefHashMap.get(key);
                 Set<String> collection = this.filterMap.get(pathRef.value()).get(className);
                 if (collection == null) {
-                    this.filterMap.get(pathRef.value()).put(className, new HashSet<>());
+                    this.filterMap.get(pathRef.value()).put(className, new LinkedHashSet<>());
                 }
                 this.filterMap.get(pathRef.value()).get(className).addAll(value);
             });
@@ -155,12 +132,17 @@ public class Filter extends AbstractDataWrapper {
             ObjectReference arrayElemRef = (ObjectReference) arrayElemRefRaw;
             StringReference filterNameRef = (StringReference) getFieldObject(arrayElemRef, "filterName");
             ArrayReference urlPatterns = (ArrayReference) getFieldObject(arrayElemRef, "urlPatterns");
-            if (urlPatterns.getValues().size() > 0) {
-                filterMapResult.put(filterNameRef.value(), new HashSet<>());
+            if (urlPatterns.getValues().size() ==  0) {
+                continue;
             }
             for (Value urlPatternRefRaw : urlPatterns.getValues()) {
                 StringReference urlPatternRef = (StringReference) urlPatternRefRaw;
-                filterMapResult.get(filterNameRef.value()).add(urlPatternRef.value());
+                Set<String> result = filterMapResult.get(filterNameRef.value());
+                if(result == null){
+                    result = new LinkedHashSet<>();
+                    filterMapResult.put(filterNameRef.value(), result);
+                }
+                result.add(urlPatternRef.value());
             }
         }
         return filterMapResult;
@@ -186,28 +168,18 @@ public class Filter extends AbstractDataWrapper {
     }
 
     @Override
-    public void setHandleOrPlugin() {
-        this.handleOrPlugin = "filter[过滤器]";
+    public void setHandleOrFrameworkName() {
+        this.handleOrFrameworkName = "Filter";
     }
 
-    @Override
-    public HashMap<String, String> getDataWrapper() {
-        return new HashMap<>();
-    }
-
-    public HashMap<String, LinkedHashMap<String, Set<String>>> getFilterMap() {
+    public HashMap<String, LinkedHashMap<String, LinkedHashSet<String>>> getFilterMap() {
         return this.filterMap;
     }
 
     @Override
-    public String getVersion() {
-        return "";
+    public void clearAny() {
+        super.clearAny();
+        this.filterMap.clear();
     }
 
-    @Override
-    public void clearData() {
-        super.clearData();
-        tomcatOrJettyObjects = new HashSet<>();
-        this.filterMap = new HashMap<>();
-    }
 }

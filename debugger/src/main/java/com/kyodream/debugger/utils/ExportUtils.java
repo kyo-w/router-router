@@ -1,6 +1,6 @@
 package com.kyodream.debugger.utils;
 
-import com.kyodream.debugger.core.category.AbstractDataWrapper;
+import com.kyodream.debugger.core.category.DefaultHandlerFramework;
 import org.apache.poi.hssf.usermodel.HSSFRow;
 import org.apache.poi.hssf.usermodel.HSSFSheet;
 import org.apache.poi.hssf.usermodel.HSSFWorkbook;
@@ -15,11 +15,11 @@ import java.util.Map;
 
 public class ExportUtils {
 
-    public static void exportAllData(HashMap<String, AbstractDataWrapper> data, HttpServletResponse response) {
+    public static void exportAllData(HashMap<String, DefaultHandlerFramework> data, HttpServletResponse response) {
         HSSFWorkbook wb = new HSSFWorkbook();
-        Iterator<Map.Entry<String, AbstractDataWrapper>> iterator = data.entrySet().iterator();
+        Iterator<Map.Entry<String, DefaultHandlerFramework>> iterator = data.entrySet().iterator();
         while (iterator.hasNext()) {
-            Map.Entry<String, AbstractDataWrapper> next = iterator.next();
+            Map.Entry<String, DefaultHandlerFramework> next = iterator.next();
             HashMap<String, String> dataWrapper = next.getValue().getDataWrapper();
             if(dataWrapper.size() == 0){
                 continue;

@@ -2,7 +2,6 @@ package com.kyodream.debugger.core.category;
 
 import com.kyodream.debugger.core.analyse.MapAnalyse;
 import com.kyodream.debugger.core.category.format.Format;
-import com.kyodream.debugger.service.DebugWebSocket;
 import com.sun.jdi.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,40 +17,20 @@ import java.util.*;
  */
 @Component
 @Slf4j
-public class Tomcat extends AbstractDataWrapper {
-    private static Set<String> discoveryClass = new HashSet<>();
+public class Tomcat extends DefaultHandler {
 
-    static {
-        discoveryClass.add("org.apache.catalina.mapper.Mapper");
-        discoveryClass.add("org.apache.tomcat.util.http.mapper.Mapper");
-    }
     private static HashMap<String, String> exactWrappersMap = new HashMap<>();
     private static HashMap<String, String> wildcardWrappersMap = new HashMap<>();
     private static HashMap<String, String> extensionWrappersMap = new HashMap<>();
     private static HashMap<String, String> defaultMap = new HashMap<>();
-    private String version;
-    private Set<ObjectReference> tomcatObjects = new HashSet<>();
     private VirtualMachine vm;
 
-    @Autowired
-    Handler handler;
-
 
     @Override
-    public void addAnalysisObject(Set<ObjectReference> objectReference) {
-        if(objectReference.size() > 0){
-            hasFind();
-        }
-        debugWebSocket.sendInfo("发现tomcat");
-        this.tomcatObjects.addAll(objectReference);
-    }
-
-    @Override
-    public boolean analystsObject(VirtualMachine attach) {
-        this.vm = attach;
-        handleVersion(attach);
-        debugWebSocket.sendInfo("开始分析tomcat");
-        for (ObjectReference tomcatObject : this.tomcatObjects) {
+    public void analystsHandlerObject(VirtualMachine vm) {
+        this.vm = vm;
+        handleVersion(vm);
+        for (ObjectReference tomcatObject : getAnalystsObject()) {
             if (tomcatObject.referenceType().name().equals("org.apache.catalina.mapper.Mapper")) {
                 debugWebSocket.sendSuccess("获取Mapper,当前tomcat版本为9/8");
                 try {
@@ -69,15 +48,21 @@ public class Tomcat extends AbstractDataWrapper {
                     debugWebSocket.sendFail("分析tomcat出现异常错误");
                 }
             }
-            handler.analystsPrefixHandler(vm);
         }
-        debugWebSocket.sendSuccess("结束分析tomcat");
-        return true;
     }
 
     @Override
-    public void setHandleOrPlugin() {
-        this.handleOrPlugin = "tomcat";
+    public Set<String> getDiscoveryClass() {
+        if(this.discoveryClass.size() == 0){
+            discoveryClass.add("org.apache.catalina.mapper.Mapper");
+            discoveryClass.add("org.apache.tomcat.util.http.mapper.Mapper");
+        }
+        return discoveryClass;
+    }
+
+    @Override
+    public void setHandleOrFrameworkName() {
+        this.handleOrFrameworkName = "tomcat";
     }
 
     private void handleTomcat98(ObjectReference tomcatObject) {
@@ -146,8 +131,8 @@ public class Tomcat extends AbstractDataWrapper {
         for (int i = 0; i < length; i++) {
             ObjectReference elem = (ObjectReference) objectReference.getValue(i);
             String url = ((StringReference) getFieldObject(elem, "name")).value();
-            ObjectReference object = getFieldObject(elem, "object");
-            String servletClass = ((StringReference) getFieldObject(object, "servletClass")).value();
+            ObjectReference objectRef = getFieldObject(elem, "object");
+            String servletClass = ((StringReference) getFieldObject(objectRef, "servletClass")).value();
             String fullName = "";
             if (urlType == UrlType.Exact) {
                 fullName = Format.doubleSlash(prefix + "/" + url);
@@ -156,52 +141,34 @@ public class Tomcat extends AbstractDataWrapper {
             } else if (urlType == UrlType.Ext) {
                 fullName = prefix + "/*." + url;
             }
-            handler.registryPrefix(fullName, servletClass);
-            handler.handlerMagicModificationFramework(vm, fullName, servletClass, servletClass);
+            RegistryType registryType = registryPrefix(fullName, servletClass);
+            if(registryType != RegistryType.None){
+                registryAnalystsObject(registryType, getFieldObject(objectRef, "instance"));
+            }
+            boolean find = handlerMagicModificationFramework(vm, fullName, servletClass, servletClass);
+            if(find){
+                springMvc.addAnalystsObject(getFieldObject(objectRef, "instance"));
+            }
             originMap.put(fullName, servletClass);
         }
     }
 
     @Override
     public HashMap<String, String> getDataWrapper() {
-        HashMap<String, String> resultHashMap = new HashMap<>();
-        if (defaultMap == null) {
-            defaultMap = new HashMap<>();
-        }
-        if (exactWrappersMap == null) {
-            exactWrappersMap = new HashMap<>();
-        }
-        if (wildcardWrappersMap == null) {
-            wildcardWrappersMap = new HashMap<>();
-        }
-        if (extensionWrappersMap == null) {
-            extensionWrappersMap = new HashMap<>();
-        }
-        resultHashMap.putAll(defaultMap);
-        resultHashMap.putAll(exactWrappersMap);
-        resultHashMap.putAll(wildcardWrappersMap);
-        resultHashMap.putAll(extensionWrappersMap);
-        return resultHashMap;
+        HashMap<String, String> dataWrapper = super.getDataWrapper();
+        dataWrapper.putAll(defaultMap);
+        dataWrapper.putAll(exactWrappersMap);
+        dataWrapper.putAll(wildcardWrappersMap);
+        dataWrapper.putAll(extensionWrappersMap);
+        return dataWrapper;
     }
-
     @Override
-    public String getVersion() {
-        return version;
-    }
-
-    @Override
-    public void clearData() {
-        this.version = "";
-        super.clearData();
-        this.tomcatObjects = new HashSet<>();
-        this.defaultMap = new HashMap<>();
-        this.wildcardWrappersMap = new HashMap<>();
-        this.exactWrappersMap = new HashMap<>();
-    }
-
-    @Override
-    public Set<String> getDiscoveryClass() {
-        return discoveryClass;
+    public void clearAny() {
+        super.clearAny();
+        defaultMap.clear();
+        wildcardWrappersMap.clear();
+        exactWrappersMap.clear();
+        extensionWrappersMap.clear();
     }
 
     private void handleVersion(VirtualMachine attach) {
@@ -209,7 +176,7 @@ public class Tomcat extends AbstractDataWrapper {
         for (ReferenceType referenceType : referenceTypes) {
             Field serverInfo = referenceType.fieldByName("serverInfo");
             StringReference serverInfoObject = (StringReference) referenceType.getValue(serverInfo);
-            version = serverInfoObject.value();
+           setVersion(serverInfoObject.value());
         }
     }
 

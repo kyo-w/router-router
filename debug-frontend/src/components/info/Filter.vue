@@ -25,22 +25,24 @@
           </el-table-column>
         </el-table>
       </el-main>
-            <el-footer>
-              count: <el-tag type="info">{{this.tableData.length}}</el-tag>
-            </el-footer>
+      <el-footer>
+        count:
+        <el-tag type="info">{{ this.tableData.length }}</el-tag>
+      </el-footer>
     </el-container>
   </div>
 </template>
 
 <script>
-import {getFilterMap} from "@/utils/dataApi";
+import {getFilterMap, getTargetDataApi} from "@/utils/dataApi";
 import {existTargetApi} from "@/utils/dataApi";
+import {onBeforeUnmount} from "vue";
 
 export default {
   name: "Filter",
   data() {
     return {
-      loading: false,
+      loading: true,
       tableData: [
         {api: "/test", name: "1"},
         {api: "/test", name: "2"},
@@ -51,44 +53,54 @@ export default {
       ]
     }
   },
-  created: async function () {
-    await existTargetApi("filter").then(res => {
-      if (!res.data.msg) {
-        this.loading = true
-      } else {
-        this.loading = false
+  mounted() {
+    const timer = setInterval(() => {
+      if (!this.loading) {
+        clearInterval(timer)
+        return
       }
-    })
-    if (!this.loading) {
-      getFilterMap().then(res => {
-        let mapkey = Object.keys(res.data.msg)
-        let tmpList = []
-        for (let elem of mapkey) {
-          let NewElem;
-          if (elem == "") {
-            NewElem = "默认路径(\"\")"
-          } else {
-            NewElem = elem
-          }
-
-          let classNameKey = Object.keys(res.data.msg[elem])
-          for (let classElem of classNameKey) {
-            for(let urlElem of  res.data.msg[elem][classElem]){
-              tmpList.push({webapp: NewElem, className: classElem, url: urlElem})
-            }
-          }
+      existTargetApi("filter").then(res => {
+        if (!res.data.msg) {
+          this.loading = true
+        } else {
+          this.loading = false
         }
-        this.tableData = tmpList
-        console.log(this.tableData)
+        if (!this.loading) {
+          getFilterMap().then(res => {
+            let mapkey = Object.keys(res.data.msg)
+            let tmpList = []
+            for (let elem of mapkey) {
+              let NewElem;
+              if (elem == "") {
+                NewElem = "默认路径(\"\")"
+              } else {
+                NewElem = elem
+              }
+
+              let classNameKey = Object.keys(res.data.msg[elem])
+              for (let classElem of classNameKey) {
+                for (let urlElem of res.data.msg[elem][classElem]) {
+                  tmpList.push({webapp: NewElem, className: classElem, url: urlElem})
+                }
+              }
+            }
+            this.tableData = tmpList
+            console.log(this.tableData)
+          })
+        }
       })
-    }
+    }, 1000)
+
+    onBeforeUnmount(() => {
+      clearInterval(timer)
+    });
   },
   methods: {}
 }
 </script>
 
 <style scoped>
-  .tips{
-    color: #ff4949;
-  }
+.tips {
+  color: #ff4949;
+}
 </style>

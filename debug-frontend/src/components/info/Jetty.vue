@@ -44,32 +44,6 @@ export default {
       count: 0
 
     }
-  },
-  async created() {
-    await existTargetApi("jetty").then(res => {
-      if (!res.data.msg) {
-        this.loading = true
-      } else {
-        this.loading = false
-      }
-    })
-    if (!this.loading) {
-      getTargetDataApi('jetty').then(res => {
-        let mapkey = Object.keys(res.data.msg)
-        this.count = mapkey.length
-        let tmpList = []
-        for (let i = 0; i < mapkey.length; i++) {
-          let data = new Object()
-          data.api = mapkey[i]
-          data.name = res.data.msg[mapkey[i]]
-          tmpList.push(data)
-        }
-        this.tableData = tmpList
-      })
-      getTargetVersionAip('jetty').then(res => {
-        this.version = res.data.msg
-      })
-    }
   }, mounted() {
     const timer = setInterval(() => {
       if(!this.loading){

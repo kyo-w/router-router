@@ -1,5 +1,6 @@
 package com.kyodream.debugger.core.category;
 
+import com.kyodream.debugger.core.analyse.ListAnalyse;
 import com.kyodream.debugger.core.analyse.MapAnalyse;
 import com.kyodream.debugger.core.analyse.SetAnalyse;
 import com.kyodream.debugger.core.category.format.Format;
@@ -11,29 +12,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 
 @Component
-public class SpringMvc extends AbstractDataWrapper implements Plugin {
-    private static Set<String> discoveryClass = new HashSet<>();
-
-    static {
-        /**
-         * 抽象类：org.springframework.web.servlet.handler.AbstractUrlHandlerMapping
-         */
-        //    Implementation Controller interface,  use @Bean(name = "${/router}")
-        discoveryClass.add("org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping");
-        discoveryClass.add("org.springframework.web.servlet.mvc.support.ControllerBeanNameHandlerMapping");
-        discoveryClass.add("org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping");
-        //    Implementation Controller interface, configuration the simpleUrlHandlerMapping
-        discoveryClass.add("org.springframework.web.servlet.handler.SimpleUrlHandlerMapping");
-
-
-        /**
-         * 处理注解: @GetMapping/ @PostMapping ...
-         */
-        discoveryClass.add("org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping");
-    }
-
-    private String prefix = null;
-    private Set<ObjectReference> springObjects = new HashSet<>();
+public class SpringMvc extends DefaultFramework {
     private HashMap<String, String> abstractUrlHandlerMapping = new HashMap<>();
 
     private HashMap<String, String> requestMappingHandlerMapping = new HashMap<>();
@@ -45,47 +24,27 @@ public class SpringMvc extends AbstractDataWrapper implements Plugin {
     }
 
     @Override
-    public Set<String> getDiscoveryClass() {
-        return discoveryClass;
-    }
-
-    @Override
-    public void registryPrefix(String prefix) {
-        this.prefix = prefix;
-    }
-
-    @Override
-    public void addAnalysisObject(Set<ObjectReference> objectReference) {
-        if (objectReference.size() > 0) {
-            hasFind();
-        }
-        objectReference.forEach(elem -> {
-            String name = elem.referenceType().name();
-            String[] parts = name.split("\\.");
-            String lastPart = parts[parts.length - 1];
-            debugWebSocket.sendInfo("发现Spring对象: " + lastPart);
-        });
-        this.springObjects.addAll(objectReference);
-    }
-
-    @Override
-    public boolean analystsObject(VirtualMachine attach) {
-        if (prefix == null) {
+    public boolean analystsFrameworkObject(VirtualMachine vm) {
+        if (getPrefix() == null) {
             debugWebSocket.sendInfo("spring还未获取路由前缀，先跳过");
             return false;
         }
         debugWebSocket.sendInfo("开始分析spring");
-        for (ObjectReference springObject : this.springObjects) {
-            String name = springObject.referenceType().name();
-            if (name.equals("org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping") ||
-                    name.equals("org.springframework.web.servlet.mvc.support.ControllerBeanNameHandlerMapping") ||
-                    name.equals("org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping") ||
-                    name.equals("org.springframework.web.servlet.handler.SimpleUrlHandlerMapping")) {
+        for (ObjectReference springObject : getAnalystsObject()) {
+            ObjectReference handlerMappingsRef = getFieldObject(springObject, "handlerMappings");
+            List<ObjectReference> arrayListRef = ListAnalyse.getArrayList(handlerMappingsRef);
+            for (ObjectReference arrayElem : arrayListRef) {
+                String name = arrayElem.referenceType().name();
+                if (name.equals("org.springframework.web.servlet.handler.BeanNameUrlHandlerMapping") ||
+                        name.equals("org.springframework.web.servlet.mvc.support.ControllerBeanNameHandlerMapping") ||
+                        name.equals("org.springframework.web.servlet.mvc.support.ControllerClassNameHandlerMapping") ||
+                        name.equals("org.springframework.web.servlet.handler.SimpleUrlHandlerMapping")) {
 
-                handlerAbstractUrlHandlerMapping(springObject);
-            }
-            if (name.equals("org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping")) {
-                handlerRequestMappingHandlerMapping(springObject);
+                    handlerAbstractUrlHandlerMapping(arrayElem);
+                }
+                if (name.equals("org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping")) {
+                    handlerRequestMappingHandlerMapping(arrayElem);
+                }
             }
         }
         debugWebSocket.sendSuccess("分析spring结束");
@@ -135,7 +94,7 @@ public class SpringMvc extends AbstractDataWrapper implements Plugin {
                                 ObjectReference next1 = iterator1.next();
                                 String url = ((StringReference) next1).value();
                                 if (!modify) {
-                                    String fullUrl = this.prefix.replace("*", "/" + url);
+                                    String fullUrl = getPrefix().replace("*", "/" + url);
                                     requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                                 } else {
                                     requestMappingHandlerMapping.put(url, className);
@@ -152,7 +111,7 @@ public class SpringMvc extends AbstractDataWrapper implements Plugin {
                                 debugWebSocket.sendInfo("修正成功");
                                 hashSetObjectRef.forEach(urlStringRef -> {
                                     if (!modify) {
-                                        String fullUrl = this.prefix.replace("*", "/" + ((StringReference) urlStringRef).value());
+                                        String fullUrl = getPrefix().replace("*", "/" + ((StringReference) urlStringRef).value());
                                         requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                                     } else {
                                         requestMappingHandlerMapping.put(((StringReference) urlStringRef).value(), className);
@@ -175,7 +134,7 @@ public class SpringMvc extends AbstractDataWrapper implements Plugin {
                         ObjectReference pathPattern = treeSetIterator.next();
                         StringReference patternString = (StringReference) getFieldObject(pathPattern, "patternString");
                         if (!modify) {
-                            String fullUrl = this.prefix.replace("*", "/" + patternString.value());
+                            String fullUrl = getPrefix().replace("*", "/" + patternString.value());
                             requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                         } else {
                             requestMappingHandlerMapping.put(patternString.value(), className);
@@ -212,7 +171,7 @@ public class SpringMvc extends AbstractDataWrapper implements Plugin {
                 while (iterator1.hasNext()) {
                     String url = ((StringReference) iterator1.next()).value();
                     if (!modify) {
-                        String fullUrl = this.prefix.replace("*", "/" + url);
+                        String fullUrl = getPrefix().replace("*", "/" + url);
                         requestMappingHandlerMapping.put(fullUrl, className);
                     } else {
                         requestMappingHandlerMapping.put(url, className);
@@ -232,7 +191,7 @@ public class SpringMvc extends AbstractDataWrapper implements Plugin {
             ObjectReference value = next.getValue();
             String className = value.referenceType().name();
             if (!modify) {
-                String fullUrl = this.prefix.replace("*", "/" + url);
+                String fullUrl = getPrefix().replace("*", "/" + url);
                 abstractUrlHandlerMapping.put(Format.doubleSlash(fullUrl), className);
             } else {
                 abstractUrlHandlerMapping.put(url, className);
@@ -240,27 +199,17 @@ public class SpringMvc extends AbstractDataWrapper implements Plugin {
         }
     }
 
-
     @Override
-    public void setHandleOrPlugin() {
-        this.handleOrPlugin = "springMvc";
+    public void setHandleOrFrameworkName() {
+        this.handleOrFrameworkName = "springMvc";
     }
 
     @Override
     public HashMap<String, String> getDataWrapper() {
-        HashMap<String, String> result = new HashMap<>();
-        result.putAll(this.abstractUrlHandlerMapping);
-        result.putAll(this.requestMappingHandlerMapping);
-        return result;
-    }
-
-    @Override
-    public String getVersion() {
-        return "";
-    }
-
-    public String getPrefix() {
-        return prefix;
+        HashMap<String, String> dataWrapper = super.getDataWrapper();
+        dataWrapper.putAll(this.abstractUrlHandlerMapping);
+        dataWrapper.putAll(this.requestMappingHandlerMapping);
+        return dataWrapper;
     }
 
     public boolean getModify() {
@@ -268,12 +217,10 @@ public class SpringMvc extends AbstractDataWrapper implements Plugin {
     }
 
     @Override
-    public void clearData() {
-        super.clearData();
-        this.prefix = null;
+    public void clearAny() {
+        super.clearAny();
         modify = false;
-        this.abstractUrlHandlerMapping = new HashMap<>();
-        this.requestMappingHandlerMapping = new HashMap<>();
-        springObjects = new HashSet<>();
+        this.abstractUrlHandlerMapping.clear();
+        this.requestMappingHandlerMapping.clear();
     }
 }
