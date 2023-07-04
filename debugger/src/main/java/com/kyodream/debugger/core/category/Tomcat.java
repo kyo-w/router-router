@@ -23,6 +23,8 @@ public class Tomcat extends DefaultHandler {
     private static HashMap<String, String> wildcardWrappersMap = new HashMap<>();
     private static HashMap<String, String> extensionWrappersMap = new HashMap<>();
     private static HashMap<String, String> defaultMap = new HashMap<>();
+
+    private ObjectReference currentwebapp = null;
     private VirtualMachine vm;
 
 
@@ -72,6 +74,7 @@ public class Tomcat extends DefaultHandler {
         while (iterator.hasNext()) {
             Map.Entry<ObjectReference, ObjectReference> next = iterator.next();
             ObjectReference value = next.getValue();
+            currentwebapp = value;
             Field path = value.referenceType().fieldByName("path");
             String prefix = ((StringReference) value.getValue(path)).value();
             handleCategory(prefix, value);
@@ -85,6 +88,7 @@ public class Tomcat extends DefaultHandler {
             ObjectReference contextList = getFieldObject(mapperHost, "contextList");
             ArrayReference contexts = (ArrayReference) getFieldObject(contextList, "contexts");
             for (int j = 0; j < contexts.length(); j++) {
+                this.currentwebapp = contexts;
                 ObjectReference contextOne = (ObjectReference) contexts.getValue(i);
                 ArrayReference versions = (ArrayReference) getFieldObject(contextOne, "versions");
                 for (int z = 0; z < versions.length(); z++) {
@@ -111,18 +115,25 @@ public class Tomcat extends DefaultHandler {
     private void handleDefaultWrapper(ObjectReference defaultWrapper) {
         ObjectReference object = getFieldObject(defaultWrapper, "object");
         StringReference servletClass = (StringReference) getFieldObject(object, "servletClass");
+        debugWebSocket.sendInfo("分析获取tomcat默认路由" + currentwebapp.toString());
         defaultMap.put("/", servletClass.value());
     }
 
     private void handleExactWrappers(String prefix, ArrayReference exactWrappers) {
+        debugWebSocket.sendInfo("分析获取tomcat全匹配路由" + currentwebapp.toString());
+        debugWebSocket.sendInfo("存在" + exactWrappers.length() + "条全匹配分析记录");
         handleMapperWrappers(prefix, exactWrappers, exactWrappersMap, UrlType.Exact);
     }
 
     private void handleWildcardWrappers(String prefix, ArrayReference wildcardWrappers) {
+        debugWebSocket.sendInfo("分析获取tomcat泛路由" + currentwebapp.toString());
+        debugWebSocket.sendInfo("存在" + wildcardWrappers.length() + "条泛路由分析记录");
         handleMapperWrappers(prefix, wildcardWrappers, wildcardWrappersMap, UrlType.Wild);
     }
 
     private void handleExtensionWrappers(String prefix, ArrayReference extensionWrappers) {
+        debugWebSocket.sendInfo("分析获取tomcat扩展路由" + currentwebapp.toString());
+        debugWebSocket.sendInfo("存在" + extensionWrappers.length() + "条扩展路由分析记录");
         handleMapperWrappers(prefix, extensionWrappers, extensionWrappersMap, UrlType.Ext);
     }
 

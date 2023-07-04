@@ -48,7 +48,7 @@ public class Jetty extends DefaultHandler {
         String contextPath = Format.doubleDot(rawContextPath);
         ObjectReference servletHandler = getFieldObject(handler, "_servletHandler");
         ArrayReference servletMappings = (ArrayReference) getFieldObject(servletHandler, "_servletMappings");
-
+        debugWebSocket.sendInfo("jetty存在" + servletMappings.length() + "条路由分析记录");
         HashMap<String, ObjectReference> classNameObjectRef = new HashMap<>();
         HashMap<String, String> servletAliasName = getServletAliasName(servletHandler, classNameObjectRef);
         handlerServletMappingObject(servletMappings, contextPath, servletAliasName, classNameObjectRef);

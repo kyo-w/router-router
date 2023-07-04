@@ -29,11 +29,11 @@ public abstract class DefaultFramework extends DefaultHandlerFramework {
     public void addAnalystsObject(ObjectReference objectReference) {
         if (objectReference != null) {
             handlerFindAnalystsObject();
-        }
-        debugWebSocket.sendInfo("发现" + this.getName() + "对象");
-        boolean ifAddSuccess = this.analystsObject.add(objectReference);
-        if(ifAddSuccess){
-            analystsHasChangeFlag();
+            debugWebSocket.sendInfo("发现" + this.getName() + "对象" + objectReference.toString());
+            boolean ifAddSuccess = this.analystsObject.add(objectReference);
+            if(ifAddSuccess){
+                analystsHasChangeFlag();
+            }
         }
     }
 

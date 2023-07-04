@@ -16,33 +16,37 @@ import java.util.*;
 @Slf4j
 public class Struts extends DefaultFramework {
 
-    private Integer version = 0;
+    private Integer struts1Or2 = 1;
 
 
     @Override
     public void addAnalystsObject(ObjectReference objectReference) {
+        // struts无法中间件直接获取一个分析对象
     }
 
 
     @Override
     public boolean analystsFrameworkObject(VirtualMachine vm) {
-        if (getPrefix() == null) {
-            debugWebSocket.sendInfo("struts未获取路由前缀先跳过");
+        if(getPrefix() == null){
+            debugWebSocket.sendInfo("未分析获取struts前缀,跳过");
             return false;
         }
-        List<ReferenceType> referenceTypes = vm.classesByName("org.apache.struts.config.impl.ModuleConfigImpl");
-        for(ReferenceType referenceType: referenceTypes){
-            version = 1;
-            debugWebSocket.sendInfo("当前struts版本为1.x");
-            List<ObjectReference> instances = referenceType.instances(0);
-            instances.forEach(elem-> super.addAnalystsObject(elem));
+        List<ReferenceType> referenceTypes = null;
+        if(struts1Or2 == 1){
+            referenceTypes = vm.classesByName("org.apache.struts.config.impl.ModuleConfigImpl");
+            for(ReferenceType referenceType: referenceTypes){
+                debugWebSocket.sendInfo("当前struts版本为1.x");
+                List<ObjectReference> instances = referenceType.instances(0);
+                instances.forEach(elem-> super.addAnalystsObject(elem));
+            }
         }
-        referenceTypes = vm.classesByName("com.opensymphony.xwork2.config.impl.DefaultConfiguration");
-        for(ReferenceType referenceType: referenceTypes){
-            version = 1;
-            debugWebSocket.sendInfo("当前struts版本为2.x");
-            List<ObjectReference> instances = referenceType.instances(0);
-            instances.forEach(elem-> super.addAnalystsObject(elem));
+        if(struts1Or2 == 2){
+            referenceTypes = vm.classesByName("com.opensymphony.xwork2.config.impl.DefaultConfiguration");
+            for(ReferenceType referenceType: referenceTypes){
+                debugWebSocket.sendInfo("当前struts版本为2.x");
+                List<ObjectReference> instances = referenceType.instances(0);
+                instances.forEach(elem-> super.addAnalystsObject(elem));
+            }
         }
 
         debugWebSocket.sendInfo("开始分析struts");
@@ -81,11 +85,17 @@ public class Struts extends DefaultFramework {
                 try {
                     pathRef = (StringReference) getFieldObject(actionConfig, "path");
                 } catch (Exception e) {
+                }
+                if(pathRef == null){
+                    debugWebSocket.sendInfo("path对象残缺，跳过此记录");
                     return;
                 }
                 try {
                     typeRef = (StringReference) getFieldObject(actionConfig, "type");
                 } catch (Exception e) {
+                }
+                if(typeRef == null){
+                    debugWebSocket.sendInfo("className对象残缺,跳过此路由");
                     return;
                 }
                 String url = getPrefix().replace("*", "/" + pathRef.value());
@@ -149,7 +159,10 @@ public class Struts extends DefaultFramework {
         }
     }
 
+    public void setStrutsVersion(Integer version){
+        this.struts1Or2 = version;
+    }
     public Integer getStrutsVersion() {
-        return version;
+        return struts1Or2;
     }
 }

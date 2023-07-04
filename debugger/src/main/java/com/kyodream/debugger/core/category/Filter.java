@@ -77,12 +77,14 @@ public class Filter extends DefaultFramework {
                 if (className.equals("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter")) {
 //                    struts2.2/2.3
                     urlPatterns.forEach(urlPattern -> {
+                        struts.setStrutsVersion(2);
                         struts.registryPrefix(urlPattern);
                     });
                 }
                 if (className.equals("org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter")) {
 //                    struts2.5
                     urlPatterns.forEach(urlPattern -> {
+                        struts.setStrutsVersion(2);
                         struts.registryPrefix(urlPattern);
                     });
                 }
