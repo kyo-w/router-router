@@ -52,6 +52,7 @@ export default {
       }
       existTargetApi("jetty").then(res => {
         if (!res.data.msg) {
+          this.$router.push("/main")
           this.loading = true
         } else {
           this.loading = false

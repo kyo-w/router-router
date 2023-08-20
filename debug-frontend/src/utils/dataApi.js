@@ -17,7 +17,7 @@ export function existDataApi() {
 
 export function getListDataApi() {
     return request({
-        url: "/data/existtarget",
+        url: "/data/SurvivalObject",
         method: 'get'
     })
 }

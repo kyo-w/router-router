@@ -61,6 +61,7 @@ export default {
       }
       existTargetApi("filter").then(res => {
         if (!res.data.msg) {
+          this.$router.push("/main")
           this.loading = true
         } else {
           this.loading = false
@@ -90,7 +91,6 @@ export default {
         }
       })
     }, 1000)
-
     onBeforeUnmount(() => {
       clearInterval(timer)
     });

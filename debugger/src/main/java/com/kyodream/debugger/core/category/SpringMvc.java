@@ -16,13 +16,6 @@ public class SpringMvc extends DefaultFramework {
     private HashMap<String, String> abstractUrlHandlerMapping = new HashMap<>();
 
     private HashMap<String, String> requestMappingHandlerMapping = new HashMap<>();
-
-    private static boolean modify = false;
-
-    public void hasModify() {
-        modify = true;
-    }
-
     @Override
     public boolean analystsFrameworkObject(VirtualMachine vm) {
         if (getPrefix() == null) {
@@ -93,7 +86,7 @@ public class SpringMvc extends DefaultFramework {
                             while (iterator1.hasNext()) {
                                 ObjectReference next1 = iterator1.next();
                                 String url = ((StringReference) next1).value();
-                                if (!modify) {
+                                if (!getModify()) {
                                     String fullUrl = getPrefix().replace("*", "/" + url);
                                     requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                                 } else {
@@ -110,7 +103,7 @@ public class SpringMvc extends DefaultFramework {
                             if (hashSetObjectRef != null) {
                                 debugWebSocket.sendInfo("修正成功");
                                 hashSetObjectRef.forEach(urlStringRef -> {
-                                    if (!modify) {
+                                    if (!getModify()) {
                                         String fullUrl = getPrefix().replace("*", "/" + ((StringReference) urlStringRef).value());
                                         requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                                     } else {
@@ -133,7 +126,7 @@ public class SpringMvc extends DefaultFramework {
                     while (treeSetIterator.hasNext()) {
                         ObjectReference pathPattern = treeSetIterator.next();
                         StringReference patternString = (StringReference) getFieldObject(pathPattern, "patternString");
-                        if (!modify) {
+                        if (!getModify()) {
                             String fullUrl = getPrefix().replace("*", "/" + patternString.value());
                             requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                         } else {
@@ -201,7 +194,7 @@ public class SpringMvc extends DefaultFramework {
 
     @Override
     public void setHandleOrFrameworkName() {
-        this.handleOrFrameworkName = "springMvc";
+        this.handleOrFrameworkName = "spring";
     }
 
     @Override

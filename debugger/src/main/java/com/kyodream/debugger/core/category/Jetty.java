@@ -85,10 +85,10 @@ public class Jetty extends DefaultHandler {
                 if(registryType != RegistryType.None){
                     registryAnalystsObject(registryType, classNameObjectRef.get(className));
                 }
-                boolean find = handlerMagicModificationFramework(vm, fullName, className, className);
-                if(find){
-                    springMvc.addAnalystsObject(classNameObjectRef.get(className));
-                }
+//                boolean find = handlerMagicModificationFramework(vm, fullName, className, className);
+//                if(find){
+//                    springMvc.addAnalystsObject(classNameObjectRef.get(className));
+//                }
                 if (!blackList.contains(className)) {
                     getDataWrapper().put(url, className);
                 }

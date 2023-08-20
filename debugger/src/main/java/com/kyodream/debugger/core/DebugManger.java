@@ -4,7 +4,6 @@ import com.kyodream.debugger.core.category.*;
 import com.kyodream.debugger.core.thread.DebuggerThread;
 import com.kyodream.debugger.pojo.DebuggerArgs;
 import com.kyodream.debugger.service.DebugWebSocket;
-import com.sun.jdi.ObjectReference;
 import com.sun.jdi.VirtualMachine;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
@@ -37,6 +36,10 @@ public class DebugManger {
             handleOrPlugin.setHandleOrFrameworkName();
         });
         this.debugWebSocket = debugWebSocket;
+    }
+
+    public HandlerFrameworkAncestor getHandlerOrFrameworkByName(String name){
+        return handlerOrFramework.get(name);
     }
 
     public void clearAll() {

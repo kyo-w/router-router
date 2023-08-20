@@ -1,7 +1,6 @@
 <template>
   <div v-loading="loading"
        element-loading-text="未完成分析"
-
   >
     <el-container>
       <el-header>
@@ -50,6 +49,7 @@ export default {
       }
       existTargetApi("jersey").then(res => {
         if (!res.data.msg) {
+          this.$router.push("/main")
           this.loading = true
         } else {
           this.loading = false

@@ -17,48 +17,27 @@ import java.util.*;
 @RestController
 @RequestMapping("/data")
 public class DataController {
-    @Autowired
-    private Tomcat tomcat;
-
-    @Autowired
-    private Jetty jetty;
-
-    @Autowired
-    private SpringMvc spring;
-
-    @Autowired
-    private Jersey jersey;
-
-    @Autowired
-    private Struts struts;
 
     @Autowired
     private DebugManger bugManger;
-
-    @Autowired
-    private Filter filter;
-
+    /**
+     *
+     * @param middle
+     * @return
+     */
     @GetMapping("/{middle}")
     public ApiResponse getMiddleData(@PathVariable("middle") String middle) {
-        if (middle.equals("tomcat")) {
-            return new ApiResponse(200, tomcat.getDataWrapper());
-        } else if (middle.equals("jetty")) {
-            return new ApiResponse(200, jetty.getDataWrapper());
-        } else if (middle.equals("spring")) {
-            return new ApiResponse(200, spring.getDataWrapper());
-        } else if (middle.equals("jersey")) {
-            return new ApiResponse(200, jersey.getDataWrapper());
-        } else if (middle.equals("struts")) {
-            return new ApiResponse(200, struts.getDataWrapper());
-        } else {
+        HandlerFrameworkAncestor target = bugManger.getHandlerOrFrameworkByName(middle);
+        if(target != null){
+            return new ApiResponse(200, target.getDataWrapper());
+        }else{
             return Constant.unknownParam;
         }
     }
 
     @GetMapping("/modify/spring")
     public ApiResponse springModify() {
-        HashMap<String, DefaultHandlerFramework> allDataWrapper = bugManger.getAllDataWrapper();
-        SpringMvc spring = (SpringMvc)allDataWrapper.get("spring");
+        SpringMvc spring = (SpringMvc) bugManger.getHandlerOrFrameworkByName("spring");
         if(spring.getModify()){
             return new ApiResponse(200, true);
         }else{
@@ -68,43 +47,33 @@ public class DataController {
 
     @GetMapping("/modify/spring/prefix")
     public ApiResponse springPrefix() {
-        HashMap<String, DefaultHandlerFramework> allDataWrapper = bugManger.getAllDataWrapper();
-        SpringMvc spring = (SpringMvc)allDataWrapper.get("spring");
+        SpringMvc spring = (SpringMvc) bugManger.getHandlerOrFrameworkByName("spring");
         return new ApiResponse(200, spring.getPrefix());
     }
 
     @GetMapping("/exist/{target}")
-    public ApiResponse existTarget(@PathVariable("target") String target) {
-        HashMap<String, DefaultHandlerFramework> allDataStatus = bugManger.getAllDataWrapper();
-        DefaultHandlerFramework dataWrapper = allDataStatus.get(target);
-        return new ApiResponse(200, dataWrapper.ifCompleteAnalysts());
+    public ApiResponse existTarget(@PathVariable("target") String targetName) {
+        HandlerFrameworkAncestor targetObject = bugManger.getHandlerOrFrameworkByName(targetName);
+        return new ApiResponse(200, targetObject.ifCompleteAnalysts());
     }
 
     @GetMapping("/version/{target}")
-    public ApiResponse getVersion(@PathVariable("target") String target) {
-        HashMap<String, DefaultHandlerFramework> allDataStatus = bugManger.getAllDataWrapper();
-        DefaultHandlerFramework abstractDataWrapper = allDataStatus.get(target);
-        return new ApiResponse(200, abstractDataWrapper.getVersion());
+    public ApiResponse getVersion(@PathVariable("target") String targetName) {
+        HandlerFrameworkAncestor targetObject = bugManger.getHandlerOrFrameworkByName(targetName);
+        return new ApiResponse(200, targetObject.getVersion());
     }
 
     @GetMapping("/count/{target}")
     public ApiResponse getTargetCount(@PathVariable("target") String middle) {
         if (middle.equals("tomcat")) {
-            return new ApiResponse(200, tomcat.getDataWrapper().size());
-        } else if (middle.equals("jetty")) {
-            return new ApiResponse(200, jetty.getDataWrapper().size());
-        } else if (middle.equals("spring")) {
-            return new ApiResponse(200, spring.getDataWrapper().size());
-        } else if (middle.equals("jersey")) {
-            return new ApiResponse(200, jersey.getDataWrapper().size());
-        } else if (middle.equals("struts")) {
-            return new ApiResponse(200, struts.getDataWrapper().size());
+            HandlerFrameworkAncestor targetObject = bugManger.getHandlerOrFrameworkByName(middle);
+            return new ApiResponse(200, targetObject.getDataWrapper().size());
         } else {
             return Constant.unknownParam;
         }
     }
 
-    @GetMapping("/existtarget")
+    @GetMapping("/exist/SurvivalObject")
     public ApiResponse getExistTarget() {
         HashMap<String, DefaultHandlerFramework> allDataStatus = bugManger.getAllDataWrapper();
         HashMap<String, Boolean> stringBooleanHashMap = new HashMap<>();
@@ -115,6 +84,12 @@ public class DataController {
             DefaultHandlerFramework value = next.getValue();
             boolean find = value.ifFind();
             stringBooleanHashMap.put(key, find);
+        }
+        HandlerFrameworkAncestor filter = bugManger.getHandlerOrFrameworkByName("filter");
+        if(filter.ifFind()){
+            stringBooleanHashMap.put("filter", true);
+        }else{
+            stringBooleanHashMap.put("filter", false);
         }
         return new ApiResponse(200, stringBooleanHashMap);
     }
@@ -128,6 +103,7 @@ public class DataController {
 
     @GetMapping("/filter")
     public ApiResponse getFilterMap(){
+        Filter filter = (Filter) bugManger.getHandlerOrFrameworkByName("filter");
         HashMap<String, LinkedHashMap<String, LinkedHashSet<String>>> filterMap = filter.getFilterMap();
         return new ApiResponse(200, filterMap);
     }

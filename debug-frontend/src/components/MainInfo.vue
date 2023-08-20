@@ -31,9 +31,9 @@
           <el-button type="primary" @click="settingConnectArg">设置</el-button>
           <el-button type="primary" @click="connectLogDrawer = true">连接日志</el-button>
           <hr/>
-          <el-button type="danger" @click="emptyButton">未授权探测</el-button>
+<!--          <el-button type="danger" @click="emptyButton">未授权探测</el-button>-->
           <el-button type="danger" @click="cleanData">置空数据</el-button>
-          <el-button type="danger" @click="exportData">一键导出(xls)</el-button>
+          <el-button type="danger" @click="exportData">一键导出(HTML)</el-button>
           <el-button type="danger" @click="closeConnect">关闭连接</el-button>
 
         </el-card>
@@ -45,7 +45,6 @@
       <div style="height: 500px">
         <el-menu class="el-menu-demo" mode="el-menu-vertical-demo" @select="handleSelect" v-for="item in targets">
           <el-menu-item :index="item"><img :src="'/static/' + item + '.png'" style="margin-right: 20px">
-<!--            <el-text tag="i" class="button_middleware">{{ item }}</el-text>-->
             <span class="button_middleware">{{ item }}</span>
           </el-menu-item>
         </el-menu>
@@ -84,10 +83,11 @@ import {getArgApi} from "../utils/settingApi";
 import {getListDataApi, exportAllApi} from "../utils/dataApi";
 import {closeConnectApi} from "../utils/manageApi";
 import BugInfo from './BugInfo.vue';
-import Constant from "@/utils/constant";
+
 import {onBeforeUnmount} from "vue";
 import {reactive} from 'vue'
 import {Message} from "@/utils/message";
+import config from "@/config";
 
 export default {
   name: "MainInfo",
@@ -180,8 +180,6 @@ export default {
         if (res.data.msg.jersey) {
           lists.push("jersey")
         }
-        lists.push("filter")
-        console.log(lists)
         this.targets = lists;
       })
     },
@@ -208,7 +206,7 @@ export default {
     }
   },
   created() {
-    this.socket = new WebSocket(Constant.WebsocketLocation)
+    this.socket = new WebSocket(config.GetWsLocation())
     getArgApi().then(res => {
       if (res.data.code !== 200) {
         Message('警告', res.data.msg, 'warning')

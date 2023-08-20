@@ -12,6 +12,16 @@ import java.util.Set;
 public abstract class DefaultFramework extends DefaultHandlerFramework {
     private String prefix = null;
 
+    private boolean modify = false;
+
+    public void HasModify(){
+        modify = true;
+    }
+
+    public boolean GetModifyFlag(){
+        return modify;
+    }
+
     public String getPrefix() {
         return prefix;
     }

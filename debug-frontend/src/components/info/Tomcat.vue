@@ -56,6 +56,7 @@ export default {
       }
       existTargetApi("tomcat").then(res => {
         if (!res.data.msg) {
+          this.$router.push("/main")
           this.loading = true
         } else {
           this.loading = false

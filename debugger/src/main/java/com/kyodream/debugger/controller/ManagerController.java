@@ -17,6 +17,10 @@ public class ManagerController {
     @Autowired
     private DebugManger bugManger;
 
+    /**
+     * 确定当前是否已经存在一个JDI的连接，但并不说明已经分析过
+     * @return
+     */
     @GetMapping("/exist")
     public ApiResponse connectExist() {
         if (bugManger.existConnect()) {
@@ -26,6 +30,10 @@ public class ManagerController {
         }
     }
 
+    /**
+     * 连接目标的JDI端口
+     * @return
+     */
     @GetMapping("/connect")
     public ApiResponse connectTarget() {
         if (bugManger.existConnect()) {
@@ -38,6 +46,10 @@ public class ManagerController {
         }
     }
 
+    /**
+     * 目标已经存在连接时，开始分析目标
+     * @return
+     */
     @GetMapping("/run")
     public ApiResponse analysts() {
         if (bugManger.startAnalysts()) {
@@ -47,12 +59,20 @@ public class ManagerController {
         }
     }
 
+    /**
+     * 清除所有的连接标记/数据
+     * @return
+     */
     @GetMapping("/clean")
     public ApiResponse cleanData() {
         bugManger.clearAll();
         return new ApiResponse(200, "complete");
     }
 
+    /**
+     * 关闭连接
+     * @return
+     */
     @GetMapping("/close/connect")
     public ApiResponse closeConnect() {
         boolean completeClose = bugManger.closeConnect();

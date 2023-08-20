@@ -67,46 +67,7 @@ public abstract class DefaultHandler extends DefaultHandlerFramework {
         this.completeAnalysts();
     }
 
-
     abstract public Set<String> getDiscoveryClass();
-
-    /**
-     * 确定是否存在继承org.springframework.web.servlet.DispatcherServlet的子类
-     * @param vm
-     * @param url
-     * @param className
-     * @param baseName
-     * @return true表示找到了
-     */
-    public boolean handlerMagicModificationFramework(VirtualMachine vm, String url, String className, String baseName) {
-        boolean modify = springMvc.getModify();
-        Boolean[] hasFind = new Boolean[]{false};
-        if (modify) {
-            return hasFind[0];
-        }
-        List<ReferenceType> referenceTypes = vm.classesByName(className);
-        referenceTypes.forEach(referenceType -> {
-            if (hasFind[0] == true) {
-                return;
-            }
-            ClassType superclass = ((ClassType) referenceType).superclass();
-            if (superclass != null) {
-                if (superclass.name().equals("org.springframework.web.servlet.DispatcherServlet")) {
-                    debugWebSocket.sendInfo("spring的类: " + baseName);
-                    if (url.endsWith("*")) {
-                        springMvc.registryPrefix(url.substring(0, url.length() - 1));
-                    } else {
-                        springMvc.registryPrefix(url);
-                    }
-                    springMvc.hasModify();
-                    hasFind[0] = true;
-                } else {
-                    hasFind[0] = handlerMagicModificationFramework(vm, url, superclass.name(), baseName);
-                }
-            }
-        });
-        return hasFind[0];
-    }
 
     public void analystsPrefixHandler(VirtualMachine virtualMachine) {
         if (struts.getPrefix() != null) {

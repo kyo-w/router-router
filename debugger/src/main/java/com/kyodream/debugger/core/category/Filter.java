@@ -171,7 +171,7 @@ public class Filter extends DefaultFramework {
 
     @Override
     public void setHandleOrFrameworkName() {
-        this.handleOrFrameworkName = "Filter";
+        this.handleOrFrameworkName = "filter";
     }
 
     public HashMap<String, LinkedHashMap<String, LinkedHashSet<String>>> getFilterMap() {

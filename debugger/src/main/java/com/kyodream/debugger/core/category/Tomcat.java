@@ -156,10 +156,10 @@ public class Tomcat extends DefaultHandler {
             if(registryType != RegistryType.None){
                 registryAnalystsObject(registryType, getFieldObject(objectRef, "instance"));
             }
-            boolean find = handlerMagicModificationFramework(vm, fullName, servletClass, servletClass);
-            if(find){
-                springMvc.addAnalystsObject(getFieldObject(objectRef, "instance"));
-            }
+//            boolean find = handlerMagicModificationFramework(vm, fullName, servletClass, servletClass);
+//            if(find){
+//                springMvc.addAnalystsObject(getFieldObject(objectRef, "instance"));
+//            }
             originMap.put(fullName, servletClass);
         }
     }
