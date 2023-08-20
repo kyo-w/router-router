@@ -86,7 +86,7 @@ public class SpringMvc extends DefaultFramework {
                             while (iterator1.hasNext()) {
                                 ObjectReference next1 = iterator1.next();
                                 String url = ((StringReference) next1).value();
-                                if (!getModify()) {
+                                if (!GetModifyFlag()) {
                                     String fullUrl = getPrefix().replace("*", "/" + url);
                                     requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                                 } else {
@@ -103,7 +103,7 @@ public class SpringMvc extends DefaultFramework {
                             if (hashSetObjectRef != null) {
                                 debugWebSocket.sendInfo("修正成功");
                                 hashSetObjectRef.forEach(urlStringRef -> {
-                                    if (!getModify()) {
+                                    if (!GetModifyFlag()) {
                                         String fullUrl = getPrefix().replace("*", "/" + ((StringReference) urlStringRef).value());
                                         requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                                     } else {
@@ -126,7 +126,7 @@ public class SpringMvc extends DefaultFramework {
                     while (treeSetIterator.hasNext()) {
                         ObjectReference pathPattern = treeSetIterator.next();
                         StringReference patternString = (StringReference) getFieldObject(pathPattern, "patternString");
-                        if (!getModify()) {
+                        if (!GetModifyFlag()) {
                             String fullUrl = getPrefix().replace("*", "/" + patternString.value());
                             requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
                         } else {
@@ -163,7 +163,7 @@ public class SpringMvc extends DefaultFramework {
                 Iterator<ObjectReference> iterator1 = unmodifiableSet.iterator();
                 while (iterator1.hasNext()) {
                     String url = ((StringReference) iterator1.next()).value();
-                    if (!modify) {
+                    if (!GetModifyFlag()) {
                         String fullUrl = getPrefix().replace("*", "/" + url);
                         requestMappingHandlerMapping.put(fullUrl, className);
                     } else {
@@ -183,7 +183,7 @@ public class SpringMvc extends DefaultFramework {
             String url = ((StringReference) next.getKey()).value();
             ObjectReference value = next.getValue();
             String className = value.referenceType().name();
-            if (!modify) {
+            if (!GetModifyFlag()) {
                 String fullUrl = getPrefix().replace("*", "/" + url);
                 abstractUrlHandlerMapping.put(Format.doubleSlash(fullUrl), className);
             } else {
@@ -205,14 +205,9 @@ public class SpringMvc extends DefaultFramework {
         return dataWrapper;
     }
 
-    public boolean getModify() {
-        return modify;
-    }
-
     @Override
     public void clearAny() {
         super.clearAny();
-        modify = false;
         this.abstractUrlHandlerMapping.clear();
         this.requestMappingHandlerMapping.clear();
     }

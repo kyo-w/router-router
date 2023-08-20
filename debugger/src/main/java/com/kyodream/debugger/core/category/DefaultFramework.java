@@ -69,6 +69,7 @@ public abstract class DefaultFramework extends DefaultHandlerFramework {
     @Override
     public void clearAny() {
         this.prefix = null;
+        this.modify = false;
         super.clearAny();
     }
 }
