@@ -20,7 +20,7 @@ public class DebugWebSocket {
 
     @OnOpen
     public void onOpen(Session session) {
-        this.SESSIONS.add(session);
+        SESSIONS.add(session);
     }
 
     public void sendMsg(DebugInfo debugInfo) {

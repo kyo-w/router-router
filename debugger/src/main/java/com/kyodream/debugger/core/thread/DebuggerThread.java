@@ -23,37 +23,42 @@ public class DebuggerThread implements Runnable {
 
     private static HashMap<DefaultHandler, AnalystsObject> handlerAnalystsObject = new HashMap<>();
 
-    public DebuggerThread(DebugWebSocket debugWebSocket, DebugManger debugManger) {
-        this.webSocket = debugWebSocket;
+    public DebuggerThread(DebugManger debugManger) {
+        this.webSocket = debugManger.debugWebSocket;
         this.debugManger = debugManger;
-        this.vm = debugManger.getVm();
+        this.vm = debugManger.vm;
         initHandler();
     }
 
     @Override
     public void run() {
-        debugManger.setScannerComplete(false);
-        log.info("创建分析线程");
+        debugManger.scanner = true;
+        try {
+            log.info("创建分析线程");
 //        遍历内存Class对象
-        webSocket.sendInfo("扫描内存对象中...");
-        if (!vm.canGetInstanceInfo()) {
-            webSocket.sendFail("目标不支持内存访问");
-            return;
-        } else {
-            webSocket.sendInfo("目标支持内存访问");
-        }
-        scannerMemory();
-        initHandlerFlag();
-        webSocket.sendInfo("完成扫描^-^");
+            webSocket.sendInfo("扫描内存对象中...");
+            if (!vm.canGetInstanceInfo()) {
+                webSocket.sendFail("目标不支持内存访问");
+                return;
+            } else {
+                webSocket.sendInfo("目标支持内存访问");
+            }
+            scannerMemory();
+            initHandlerFlag();
+            webSocket.sendInfo("完成扫描^-^");
 //        开始分析
-        handleEvent();
-        debugManger.setScannerComplete(true);
+            handleEvent();
+        }catch (Exception e){
+            e.printStackTrace();
+        }finally {
+            debugManger.scanner = false;
+        }
+        debugManger.completeAnalysts = true;
         webSocket.sendSuccess("完成扫描");
     }
 
     private void initHandler() {
-        HashMap<String, DefaultHandlerFramework> handlerOrFramework = debugManger.getAllDataWrapper();
-        handlerOrFramework.values().forEach(handleOrFramework -> {
+        debugManger.handlerOrFramework.values().forEach(handleOrFramework -> {
             if (handleOrFramework instanceof DefaultHandler) {
                 this.handles.add((DefaultHandler) handleOrFramework);
             }

@@ -33,6 +33,7 @@ public class Jetty extends DefaultHandler {
         handleVersion(vm);
         debugWebSocket.sendInfo("开始分析jetty");
         for (ObjectReference jettyObject : getAnalystsObject()) {
+            filter.addAnalystsObject(jettyObject);
             handleWebAppContextOrServletContext(jettyObject);
         }
         debugWebSocket.sendSuccess("结束分析jetty");
@@ -85,10 +86,6 @@ public class Jetty extends DefaultHandler {
                 if(registryType != RegistryType.None){
                     registryAnalystsObject(registryType, classNameObjectRef.get(className));
                 }
-//                boolean find = handlerMagicModificationFramework(vm, fullName, className, className);
-//                if(find){
-//                    springMvc.addAnalystsObject(classNameObjectRef.get(className));
-//                }
                 if (!blackList.contains(className)) {
                     getDataWrapper().put(url, className);
                 }

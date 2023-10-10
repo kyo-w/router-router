@@ -16,21 +16,20 @@ public class ArgsController {
 
     @PostMapping("/set")
     public ApiResponse SetArgs(@RequestBody DebuggerArgs args) {
-        if(bugManger.existConnect()){
+        if(bugManger.vm != null){
             return Constant.hasExist;
         }
         if(args.getTimeout() == null){
             args.setTimeout("3000");
         }
-        bugManger.setDebuggerArgs(args);
+        bugManger.debuggerArgs = args;
         return Constant.settingSuccess;
     }
 
     @GetMapping("/get")
     public ApiResponse getSetting() {
-        DebuggerArgs debuggerArgs = bugManger.getDebuggerArgs();
-        if(debuggerArgs != null){
-            return new ApiResponse(200, debuggerArgs);
+        if(bugManger.debuggerArgs != null){
+            return new ApiResponse(200, bugManger.debuggerArgs);
         }
         else{
             return Constant.emptyAttr;
@@ -39,7 +38,7 @@ public class ArgsController {
 
     @GetMapping("/clean")
     public ApiResponse cleanSetting(){
-        bugManger.setDebuggerArgs(null);
+        bugManger.debuggerArgs = null;
         return Constant.handleSuccess;
     }
 }

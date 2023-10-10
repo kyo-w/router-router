@@ -3,6 +3,7 @@ package com.kyodream.debugger.controller;
 import com.kyodream.debugger.core.DebugManger;
 import com.kyodream.debugger.utils.ApiResponse;
 import com.kyodream.debugger.utils.Constant;
+import com.sun.jdi.VirtualMachine;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +24,7 @@ public class ManagerController {
      */
     @GetMapping("/exist")
     public ApiResponse connectExist() {
-        if (bugManger.existConnect()) {
+        if (bugManger.vm != null) {
             return Constant.connectExist;
         } else {
             return Constant.connectNoExist;
@@ -36,7 +37,7 @@ public class ManagerController {
      */
     @GetMapping("/connect")
     public ApiResponse connectTarget() {
-        if (bugManger.existConnect()) {
+        if (bugManger.vm != null) {
             return Constant.connectRepeat;
         }
         if (bugManger.connectRemoteJVM()) {
@@ -75,7 +76,10 @@ public class ManagerController {
      */
     @GetMapping("/close/connect")
     public ApiResponse closeConnect() {
-        boolean completeClose = bugManger.closeConnect();
-        return new ApiResponse(200, completeClose);
+        if(bugManger.vm != null){
+            bugManger.vm.dispose();
+            bugManger.vm = null;
+        }
+        return new ApiResponse(200, bugManger.scanner);
     }
 }

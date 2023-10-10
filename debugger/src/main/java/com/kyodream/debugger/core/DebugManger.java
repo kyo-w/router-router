@@ -2,6 +2,7 @@ package com.kyodream.debugger.core;
 
 import com.kyodream.debugger.core.category.*;
 import com.kyodream.debugger.core.thread.DebuggerThread;
+import com.kyodream.debugger.pojo.ApiStack;
 import com.kyodream.debugger.pojo.DebuggerArgs;
 import com.kyodream.debugger.service.DebugWebSocket;
 import com.sun.jdi.VirtualMachine;
@@ -16,13 +17,15 @@ import java.util.*;
 
 @Component
 public class DebugManger {
-    private HashMap<String, DefaultHandlerFramework> handlerOrFramework = new HashMap<>();
-    private DebuggerArgs debuggerArgs = null;
-    private DebugWebSocket debugWebSocket;
+    public HashMap<String, DefaultHandlerFramework> handlerOrFramework = new HashMap<>();
+    public DebuggerArgs debuggerArgs = null;
+    public DebugWebSocket debugWebSocket;
+    public VirtualMachine vm;
+    public Boolean scanner = false;
 
-    private VirtualMachine vm;
+    public Boolean completeAnalysts = false;
 
-    private Boolean scannerComplete = true;
+    public List<ApiStack> allStack = new ArrayList<>();
 
     @Autowired
     public DebugManger(SpringMvc spring, Tomcat tomcat, Jetty jetty, Jersey jersey, Struts struts, Filter filter, DebugWebSocket debugWebSocket) {
@@ -38,7 +41,7 @@ public class DebugManger {
         this.debugWebSocket = debugWebSocket;
     }
 
-    public HandlerFrameworkAncestor getHandlerOrFrameworkByName(String name){
+    public HandlerFrameworkAncestor getHandlerOrFrameworkByName(String name) {
         return handlerOrFramework.get(name);
     }
 
@@ -48,6 +51,7 @@ public class DebugManger {
             Map.Entry<String, DefaultHandlerFramework> next = iterator.next();
             next.getValue().clearAny();
             DebuggerThread.clearAllFlag();
+            completeAnalysts = false;
         }
     }
 
@@ -74,63 +78,18 @@ public class DebugManger {
                 this.vm = attach;
             }
             debugWebSocket.sendInfo("连接成功");
-            scannerComplete = true;
             return true;
         }
     }
 
     public boolean startAnalysts() {
-        if (this.scannerComplete) {
-            DebuggerThread analystsThread = new DebuggerThread(debugWebSocket, this);
+        if (!this.scanner) {
+            DebuggerThread analystsThread = new DebuggerThread(this);
             Thread thread = new Thread(analystsThread);
             thread.start();
             return true;
         } else {
             return false;
         }
-    }
-
-    public VirtualMachine getVm() {
-        return vm;
-    }
-
-    public void setScannerComplete(Boolean flag) {
-        this.scannerComplete = flag;
-    }
-
-    public void stopDebug() {
-        this.vm.dispose();
-    }
-
-    public HashMap<String, DefaultHandlerFramework> getAllDataWrapper() {
-        return handlerOrFramework;
-    }
-
-    public boolean existConnect() {
-        if (vm == null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    public boolean closeConnect() {
-        if (this.scannerComplete) {
-            if(this.vm != null) {
-                this.vm.dispose();
-                this.vm = null;
-            }
-            return true;
-        }else{
-            return false;
-        }
-    }
-
-    public DebuggerArgs getDebuggerArgs() {
-        return debuggerArgs;
-    }
-
-    public void setDebuggerArgs(DebuggerArgs debuggerArgs) {
-        this.debuggerArgs = debuggerArgs;
     }
 }

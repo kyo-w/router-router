@@ -1,12 +1,12 @@
 import {createRouter, createWebHashHistory} from 'vue-router'
-const BugSetting = () => import("../components/BugSetting")
-const Main = () => import("../components/MainInfo")
-const Tomcat = ()=>import("../components/info/Tomcat")
-const Spring = ()=>import("../components/info/Spring")
-const Struts = ()=>import("../components/info/Struts")
-const Jersey = ()=>import("../components/info/Jersey")
-const Jetty = ()=>import("../components/info/Jetty")
-const Filter = ()=>import("../components/info/Filter")
+const BugSetting = () => import("../view/BugSetting.vue")
+const Main = () => import("../view/MainInfo.vue")
+const Tomcat = ()=>import("@/view/info/Tomcat")
+const Spring = ()=>import("@/view/info/Spring")
+const Struts = ()=>import("@/view/info/Struts")
+const Jersey = ()=>import("@/view/info/Jersey")
+const Jetty = ()=>import("@/view/info/Jetty")
+const Filter = ()=>import("@/view/info/Filter")
 
 const routes = [
     {

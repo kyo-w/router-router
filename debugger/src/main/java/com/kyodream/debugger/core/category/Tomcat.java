@@ -28,6 +28,11 @@ public class Tomcat extends DefaultHandler {
     private VirtualMachine vm;
 
 
+    /**
+     * tomcat7/6不再支持Filter分析
+     *
+     * @param vm
+     */
     @Override
     public void analystsHandlerObject(VirtualMachine vm) {
         this.vm = vm;
@@ -36,6 +41,7 @@ public class Tomcat extends DefaultHandler {
             if (tomcatObject.referenceType().name().equals("org.apache.catalina.mapper.Mapper")) {
                 debugWebSocket.sendSuccess("获取Mapper,当前tomcat版本为9/8");
                 try {
+                    filter.addAnalystsObject(tomcatObject);
                     handleTomcat98(tomcatObject);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -55,7 +61,7 @@ public class Tomcat extends DefaultHandler {
 
     @Override
     public Set<String> getDiscoveryClass() {
-        if(this.discoveryClass.size() == 0){
+        if (this.discoveryClass.size() == 0) {
             discoveryClass.add("org.apache.catalina.mapper.Mapper");
             discoveryClass.add("org.apache.tomcat.util.http.mapper.Mapper");
         }
@@ -117,6 +123,12 @@ public class Tomcat extends DefaultHandler {
         StringReference servletClass = (StringReference) getFieldObject(object, "servletClass");
         debugWebSocket.sendInfo("分析获取tomcat默认路由" + currentwebapp.toString());
         defaultMap.put("/", servletClass.value());
+
+        // fix: 修补默认路由直接绑定框架
+        RegistryType registryType = registryPrefix("/", servletClass.value());
+        if (registryType != RegistryType.None) {
+            registryAnalystsObject(registryType, getFieldObject(object, "instance"));
+        }
     }
 
     private void handleExactWrappers(String prefix, ArrayReference exactWrappers) {
@@ -153,13 +165,9 @@ public class Tomcat extends DefaultHandler {
                 fullName = prefix + "/*." + url;
             }
             RegistryType registryType = registryPrefix(fullName, servletClass);
-            if(registryType != RegistryType.None){
+            if (registryType != RegistryType.None) {
                 registryAnalystsObject(registryType, getFieldObject(objectRef, "instance"));
             }
-//            boolean find = handlerMagicModificationFramework(vm, fullName, servletClass, servletClass);
-//            if(find){
-//                springMvc.addAnalystsObject(getFieldObject(objectRef, "instance"));
-//            }
             originMap.put(fullName, servletClass);
         }
     }
@@ -173,6 +181,7 @@ public class Tomcat extends DefaultHandler {
         dataWrapper.putAll(extensionWrappersMap);
         return dataWrapper;
     }
+
     @Override
     public void clearAny() {
         super.clearAny();
@@ -187,7 +196,7 @@ public class Tomcat extends DefaultHandler {
         for (ReferenceType referenceType : referenceTypes) {
             Field serverInfo = referenceType.fieldByName("serverInfo");
             StringReference serverInfoObject = (StringReference) referenceType.getValue(serverInfo);
-           setVersion(serverInfoObject.value());
+            setVersion(serverInfoObject.value());
         }
     }
 

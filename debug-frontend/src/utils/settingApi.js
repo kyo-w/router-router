@@ -15,3 +15,10 @@ export function getArgApi(){
   })
 }
 
+export function cleanArgApi(){
+  return request({
+    url: '/args/clean',
+    method: 'get'
+  })
+}
+

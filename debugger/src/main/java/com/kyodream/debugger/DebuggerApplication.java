@@ -38,6 +38,8 @@ public class DebuggerApplication implements CommandLineRunner {
     public void onDestroy() throws Exception {
         System.out.println("执行销毁操作...");
         // 在这里执行你需要的操作
-        debugManger.stopDebug();
+        if(debugManger.vm != null){
+            debugManger.vm.dispose();
+        }
     }
 }

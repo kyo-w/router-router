@@ -14,41 +14,24 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletResponse;
 import java.util.*;
 
+/**
+ * 数据获取类
+ */
 @RestController
 @RequestMapping("/data")
 public class DataController {
 
     @Autowired
     private DebugManger bugManger;
-    /**
-     *
-     * @param middle
-     * @return
-     */
+
     @GetMapping("/{middle}")
     public ApiResponse getMiddleData(@PathVariable("middle") String middle) {
         HandlerFrameworkAncestor target = bugManger.getHandlerOrFrameworkByName(middle);
-        if(target != null){
+        if (target != null) {
             return new ApiResponse(200, target.getDataWrapper());
-        }else{
+        } else {
             return Constant.unknownParam;
         }
-    }
-
-    @GetMapping("/modify/spring")
-    public ApiResponse springModify() {
-        SpringMvc spring = (SpringMvc) bugManger.getHandlerOrFrameworkByName("spring");
-        if(spring.getModify()){
-            return new ApiResponse(200, true);
-        }else{
-            return new ApiResponse(200, false);
-        }
-    }
-
-    @GetMapping("/modify/spring/prefix")
-    public ApiResponse springPrefix() {
-        SpringMvc spring = (SpringMvc) bugManger.getHandlerOrFrameworkByName("spring");
-        return new ApiResponse(200, spring.getPrefix());
     }
 
     @GetMapping("/exist/{target}")
@@ -75,9 +58,8 @@ public class DataController {
 
     @GetMapping("/exist/SurvivalObject")
     public ApiResponse getExistTarget() {
-        HashMap<String, DefaultHandlerFramework> allDataStatus = bugManger.getAllDataWrapper();
         HashMap<String, Boolean> stringBooleanHashMap = new HashMap<>();
-        Iterator<Map.Entry<String, DefaultHandlerFramework>> iterator = allDataStatus.entrySet().iterator();
+        Iterator<Map.Entry<String, DefaultHandlerFramework>> iterator = bugManger.handlerOrFramework.entrySet().iterator();
         while (iterator.hasNext()) {
             Map.Entry<String, DefaultHandlerFramework> next = iterator.next();
             String key = next.getKey();
@@ -86,9 +68,9 @@ public class DataController {
             stringBooleanHashMap.put(key, find);
         }
         HandlerFrameworkAncestor filter = bugManger.getHandlerOrFrameworkByName("filter");
-        if(filter.ifFind()){
+        if (filter.ifFind()) {
             stringBooleanHashMap.put("filter", true);
-        }else{
+        } else {
             stringBooleanHashMap.put("filter", false);
         }
         return new ApiResponse(200, stringBooleanHashMap);
@@ -97,12 +79,12 @@ public class DataController {
     @GetMapping("/export/{target}")
     public void exportData(HttpServletResponse response, @PathVariable("target") String middle) {
         if (middle.equals("all")) {
-            ExportUtils.exportAllData(bugManger.getAllDataWrapper(), response);
+            ExportUtils.exportAllData(bugManger.handlerOrFramework, response);
         }
     }
 
     @GetMapping("/filter")
-    public ApiResponse getFilterMap(){
+    public ApiResponse getFilterMap() {
         Filter filter = (Filter) bugManger.getHandlerOrFrameworkByName("filter");
         HashMap<String, LinkedHashMap<String, LinkedHashSet<String>>> filterMap = filter.getFilterMap();
         return new ApiResponse(200, filterMap);

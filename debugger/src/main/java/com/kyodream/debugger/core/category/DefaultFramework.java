@@ -12,16 +12,6 @@ import java.util.Set;
 public abstract class DefaultFramework extends DefaultHandlerFramework {
     private String prefix = null;
 
-    private boolean modify = false;
-
-    public void HasModify(){
-        modify = true;
-    }
-
-    public boolean GetModifyFlag(){
-        return modify;
-    }
-
     public String getPrefix() {
         return prefix;
     }
@@ -29,14 +19,9 @@ public abstract class DefaultFramework extends DefaultHandlerFramework {
     public void registryPrefix(String prefix) {
         this.prefix = prefix;
     }
-
-
-    @Override
-    public void addAnalystsObjectSet(Set<ObjectReference> objectReferences) throws Exception {
-        throw new Exception("框架不支持集合操作");
-    }
     @Override
     public void addAnalystsObject(ObjectReference objectReference) {
+        super.addAnalystsObject(objectReference);
         if (objectReference != null) {
             handlerFindAnalystsObject();
             debugWebSocket.sendInfo("发现" + this.getName() + "对象" + objectReference.toString());
@@ -69,7 +54,6 @@ public abstract class DefaultFramework extends DefaultHandlerFramework {
     @Override
     public void clearAny() {
         this.prefix = null;
-        this.modify = false;
         super.clearAny();
     }
 }

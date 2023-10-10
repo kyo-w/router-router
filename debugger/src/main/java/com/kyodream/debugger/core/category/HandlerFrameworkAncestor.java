@@ -7,6 +7,7 @@ import java.util.Set;
 
 /**
  * HandlerFrameworkAncestor主要父类各个标志位/数据/分析标志位的管理
+ * BaseFlagControllerInterface：目标中间件或框架[存在状态/分析状态]
  */
 public class HandlerFrameworkAncestor implements DataWrapper, BaseFlagControllerInterface{
 

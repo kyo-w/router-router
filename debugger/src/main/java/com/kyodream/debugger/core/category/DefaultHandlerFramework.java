@@ -1,6 +1,7 @@
 package com.kyodream.debugger.core.category;
 
 import com.kyodream.debugger.service.DebugWebSocket;
+import com.kyodream.debugger.service.DiscoverWebSocket;
 import com.sun.jdi.Field;
 import com.sun.jdi.ObjectReference;
 import com.sun.jdi.VirtualMachine;
@@ -21,19 +22,26 @@ public abstract class DefaultHandlerFramework extends HandlerFrameworkAncestor {
     @Autowired
     DebugWebSocket debugWebSocket;
 
+    @Autowired
+    DiscoverWebSocket discoverWebSocket;
+
     /**
      * 中间件分析对象添加
      * @param objectReferences
      * @throws Exception
      */
-    abstract public void addAnalystsObjectSet(Set<ObjectReference> objectReferences) throws Exception;
+    public void addAnalystsObjectSet(Set<ObjectReference> objectReferences){
+        discoverWebSocket.discoveryMiddlewareOrFramework(handleOrFrameworkName);
+    }
 
     /**
      * 框架分析对象添加方法
      * @param objectReference
      * @throws Exception
      */
-    abstract public void addAnalystsObject(ObjectReference objectReference) throws Exception;
+    public void addAnalystsObject(ObjectReference objectReference){
+        discoverWebSocket.discoveryMiddlewareOrFramework(handleOrFrameworkName);
+    }
 
     public Set<ObjectReference> getAnalystsObject() {
         return this.analystsObject;
@@ -74,6 +82,7 @@ public abstract class DefaultHandlerFramework extends HandlerFrameworkAncestor {
         this.clearData();
         this.clearAllFlag();
         this.analystsObject.clear();
+        discoverWebSocket.cleanCache();
     }
 
 }

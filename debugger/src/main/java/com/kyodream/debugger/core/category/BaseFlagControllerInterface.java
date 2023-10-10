@@ -2,6 +2,8 @@ package com.kyodream.debugger.core.category;
 
 /**
  * 单独负责处理某个Handler或者框架的标志位
+ * 目标中间件或框架存在状态
+ * 分析状态
  */
 public interface BaseFlagControllerInterface {
 

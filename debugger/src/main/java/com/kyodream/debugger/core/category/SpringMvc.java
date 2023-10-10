@@ -16,6 +16,7 @@ public class SpringMvc extends DefaultFramework {
     private HashMap<String, String> abstractUrlHandlerMapping = new HashMap<>();
 
     private HashMap<String, String> requestMappingHandlerMapping = new HashMap<>();
+
     @Override
     public boolean analystsFrameworkObject(VirtualMachine vm) {
         if (getPrefix() == null) {
@@ -86,12 +87,11 @@ public class SpringMvc extends DefaultFramework {
                             while (iterator1.hasNext()) {
                                 ObjectReference next1 = iterator1.next();
                                 String url = ((StringReference) next1).value();
-                                if (!GetModifyFlag()) {
-                                    String fullUrl = getPrefix().replace("*", "/" + url);
-                                    requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
-                                } else {
-                                    requestMappingHandlerMapping.put(url, className);
-                                }
+                                String fullUrl = getPrefix().replace("*", "/" + url);
+                                requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
+//                                } else {
+//                                    requestMappingHandlerMapping.put(url, className);
+//                                }
                             }
                         } else {
                             debugWebSocket.sendInfo("目标版本高于等于5.2.0.RELEASE, 路由存储方式改变修正");
@@ -103,12 +103,12 @@ public class SpringMvc extends DefaultFramework {
                             if (hashSetObjectRef != null) {
                                 debugWebSocket.sendInfo("修正成功");
                                 hashSetObjectRef.forEach(urlStringRef -> {
-                                    if (!GetModifyFlag()) {
-                                        String fullUrl = getPrefix().replace("*", "/" + ((StringReference) urlStringRef).value());
-                                        requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
-                                    } else {
-                                        requestMappingHandlerMapping.put(((StringReference) urlStringRef).value(), className);
-                                    }
+//                                    if (!GetModifyFlag()) {
+                                    String fullUrl = getPrefix().replace("*", "/" + ((StringReference) urlStringRef).value());
+                                    requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
+//                                    } else {
+//                                        requestMappingHandlerMapping.put(((StringReference) urlStringRef).value(), className);
+//                                    }
                                 });
                             } else {
                                 debugWebSocket.sendFail("修正失败: RequestMappingHandlerMapping(注解路由)获取失败，路由缺失");
@@ -126,12 +126,12 @@ public class SpringMvc extends DefaultFramework {
                     while (treeSetIterator.hasNext()) {
                         ObjectReference pathPattern = treeSetIterator.next();
                         StringReference patternString = (StringReference) getFieldObject(pathPattern, "patternString");
-                        if (!GetModifyFlag()) {
-                            String fullUrl = getPrefix().replace("*", "/" + patternString.value());
-                            requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
-                        } else {
-                            requestMappingHandlerMapping.put(patternString.value(), className);
-                        }
+//                        if (!GetModifyFlag()) {
+                        String fullUrl = getPrefix().replace("*", "/" + patternString.value());
+                        requestMappingHandlerMapping.put(Format.doubleSlash(fullUrl), className);
+//                        } else {
+//                            requestMappingHandlerMapping.put(patternString.value(), className);
+//                        }
                     }
                 }
             }
@@ -163,12 +163,12 @@ public class SpringMvc extends DefaultFramework {
                 Iterator<ObjectReference> iterator1 = unmodifiableSet.iterator();
                 while (iterator1.hasNext()) {
                     String url = ((StringReference) iterator1.next()).value();
-                    if (!GetModifyFlag()) {
+//                    if (!GetModifyFlag()) {
                         String fullUrl = getPrefix().replace("*", "/" + url);
                         requestMappingHandlerMapping.put(fullUrl, className);
-                    } else {
-                        requestMappingHandlerMapping.put(url, className);
-                    }
+//                    } else {
+//                        requestMappingHandlerMapping.put(url, className);
+//                    }
                 }
             }
         }
@@ -183,12 +183,12 @@ public class SpringMvc extends DefaultFramework {
             String url = ((StringReference) next.getKey()).value();
             ObjectReference value = next.getValue();
             String className = value.referenceType().name();
-            if (!GetModifyFlag()) {
+//            if (!GetModifyFlag()) {
                 String fullUrl = getPrefix().replace("*", "/" + url);
                 abstractUrlHandlerMapping.put(Format.doubleSlash(fullUrl), className);
-            } else {
-                abstractUrlHandlerMapping.put(url, className);
-            }
+//            } else {
+//                abstractUrlHandlerMapping.put(url, className);
+//            }
         }
     }
 
