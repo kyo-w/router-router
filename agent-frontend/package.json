@@ -1,0 +1,26 @@
+{
+  "name": "agent-frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build"
+  },
+  "dependencies": {
+    "@element-plus/icons-vue": "^2.1.0",
+    "axios": "^1.6.0",
+    "compression-webpack-plugin": "^10.0.0",
+    "core-js": "^3.8.3",
+    "element-plus": "^2.4.1",
+    "vue": "^3.2.13",
+    "vue-native-websocket": "^2.0.15",
+    "vue-router": "^4.0.3",
+    "vuex": "^4.1.0",
+    "ws": "^8.14.2"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "~5.0.0",
+    "@vue/cli-plugin-router": "~5.0.0",
+    "@vue/cli-service": "~5.0.0"
+  }
+}

@@ -1,0 +1,12 @@
+:root[theme='dark'] {
+    --bg-color: #333333;
+}
+
+:root {
+    background-color: var(--bg-color);
+    font-size: 18px;
+}
+
+:root[theme='light'] {
+    --bg-color: #f0f6fc;
+}
