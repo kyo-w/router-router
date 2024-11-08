@@ -1,12 +1,13 @@
-import java.util.Collection;
 import java.util.HashMap;
 
 public class Test {
-    @org.junit.jupiter.api.Test
-    public void test(){
+    public static void main(String[] args) {
         HashMap<Object, Object> objectObjectHashMap = new HashMap<>();
-        Object[] array = objectObjectHashMap.values().toArray();
-        String info ="*.do";
-        System.out.println(info.substring(2));
+        objectObjectHashMap.put("test", "111");
+        Object[] array = objectObjectHashMap.keySet().toArray();
+        for(Object info : array){
+            System.out.println(objectObjectHashMap.get(info));
+        }
+
     }
 }

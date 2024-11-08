@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="router.server.mapper.MiddlewareMapper">
+
+    <!--创建表的 SQL 语句-->
+    <update id="initTable">
+        CREATE TABLE IF NOT EXISTS `middleware`
+        (
+            `id`
+            INTEGER
+            PRIMARY
+            KEY,
+            `projectId`
+            INTEGER
+            NOT
+            NULL
+            `type`
+            TEXT
+            NOT
+            NULL,
+            `virtualPath`
+            TEXT
+            NOT
+            NULL,
+            `physicalPath`
+            TEXT
+            NOT
+            NULL,
+            `version`
+            TEXT
+        );
+    </update>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id"
+            parameterType="router.server.entity.MiddlewareEntity">
+        INSERT INTO middleware (id, projectId, type, virtualPath, physicalPath, version)
+        VALUES (#{id}, #{projectId}, #{type}, #{virtualPath}, #{physicalPath}, #{version})
+    </insert>
+    <select id="selectTypeByProjectId" resultType="java.lang.String">
+        select type
+        from middleware where projectId = #{projectId}
+    </select>
+
+    <select id="selectByProjectIdAndType" resultType="router.server.entity.MiddlewareEntity">
+        select * from middleware where projectId = #{projectId} and type IN
+        <foreach collection="types" item="type" open="(" separator="," close=")">
+            #{type}
+        </foreach>
+    </select>
+
+</mapper>

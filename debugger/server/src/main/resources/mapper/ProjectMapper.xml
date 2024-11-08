@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="router.server.mapper.ProjectMapper">
+    <select id="initTable">
+        CREATE TABLE IF NOT EXISTS `project`
+        (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+            `alias` TEXT NOT NULL,
+            `hostname` TEXT NOT NULL,
+            `port` TEXT NOT NULL,
+            `createTime` DATE
+        );
+    </select>
+    <select id="getAllProjectList" resultType="router.server.entity.ProjectEntity">
+       select * from project
+    </select>
+    <select id="getProjectByName" parameterType="String" resultType="router.server.entity.ProjectEntity">
+        select * from project where alias = #{alias}
+    </select>
+
+    <select id="getProjectById" parameterType="Integer" resultType="router.server.entity.ProjectEntity">
+        select * from project where id = #{id}
+    </select>
+
+    <insert id="saveProject" parameterType="router.server.entity.ProjectEntity" keyProperty="id" useGeneratedKeys="true">
+        INSERT INTO project(id, alias, hostname, port, createTime)
+        VALUES (#{id}, #{alias}, #{hostname}, #{port}, #{createTime})
+    </insert>
+</mapper>

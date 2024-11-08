@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="router.server.mapper.HandlerMapper">
+    <resultMap id="handlerMapper" type="router.server.entity.HandlerEntity">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="frameworkId" jdbcType="INTEGER" property="frameworkId"/>
+        <result column="classname" jdbcType="VARCHAR" property="classname"/>
+        <result column="urls" jdbcType="VARCHAR" property="urls"  typeHandler="router.server.handler.ListToStringHandler"/>
+        <result column="mark" jdbcType="VARCHAR" property="mark"/>
+    </resultMap>
+    <!--创建表的 SQL 语句-->
+    <update id="initTable">
+        CREATE TABLE IF NOT EXISTS `handler`
+        (
+            `id` INTEGER PRIMARY KEY,
+            `frameworkId`  INT   NOT NULL,
+            `classname` TEXT NOT NULL,
+            `urls` TEXT NOT NULL,
+            `mark` TEXT
+        );
+    </update>
+
+    <insert id="insertHandler" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        insert into handler(id, frameworkId,classname,urls,mark)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.id},#{item.frameworkId},#{item.classname},#{item.urls,jdbcType=VARCHAR, typeHandler=com.kyodream.debugger.handler.ListToStringHandler},#{item.mark})
+        </foreach>
+    </insert>
+
+    <select id="selectAllByFrameworkId" resultMap="handlerMapper">
+        select * from handler where frameworkId = #{frameworkId} LIMIT ${limit} OFFSET ${page}
+    </select>
+
+    <select id="selectCountByFrameworkId" resultType="INTEGER">
+        select count(*) from handler where frameworkId = #{frameworkId}
+    </select>
+</mapper>

@@ -1,22 +1,22 @@
 import {createRouter, createWebHashHistory, RouteRecordRaw} from 'vue-router'
 import {mgConnectExist} from "@/api/manageApi";
 
-const connectView = () => import('@/views/Connect.vue')
-const debugIndexView = () => import('@/views/debug/Index.vue')
-const TomcatView = () => import('@/views/debug/Tomcat.vue')
-const SettingView = () => import('@/views/debug/Setting.vue')
-const LogView = () => import('@/views/debug/Log.vue')
-const SpringView = () => import('@/views/debug/Spring.vue')
-const JerseyView = () => import('@/views/debug/Jersey.vue')
-const StrutsView = () => import('@/views/debug/Struts.vue')
+const dashBoard = () => import('@/views/Dashboard.vue')
+const debugIndexView = () => import('@/views/router/Index.vue')
+const TomcatView = () => import('@/views/router/Tomcat.vue')
+const SettingView = () => import('@/views/router/Setting.vue')
+const LogView = () => import('@/views/router/Log.vue')
+const SpringView = () => import('@/views/router/Spring.vue')
+const JerseyView = () => import('@/views/router/Jersey.vue')
+const StrutsView = () => import('@/views/router/Struts.vue')
 
-const ServletView = () => import('@/views/debug/Servlet.vue')
+const ServletView = () => import('@/views/router/Servlet.vue')
 const routes: Array<RouteRecordRaw> = [{
-    path: '/connect',
-    name: 'connect',
-    component: connectView
+    path: '/dashboard',
+    name: 'dashboard',
+    component: dashBoard
 }, {
-    path: '/debug',
+    path: '/router',
     name: 'debug',
     component: debugIndexView,
     children: [{
@@ -50,7 +50,7 @@ const routes: Array<RouteRecordRaw> = [{
     }],
 }, {
     path: '/',
-    redirect: '/debug'
+    redirect: '/dashboard'
 }
 ]
 
@@ -58,18 +58,18 @@ const router = createRouter({
     history: createWebHashHistory(process.env.BASE_URL),
     routes
 })
-router.beforeEach((to, from, next) => {
-    if (to.name == 'connect') {
-        next()
-        return
-    }
-    mgConnectExist().then(res => {
-        if (!res.isWant()) {
-            router.push('/connect')
-            return
-        } else {
-            next()
-        }
-    })
-})
+// router.beforeEach((to, from, next) => {
+//     if (to.name == 'connect') {
+//         next()
+//         return
+//     }
+//     mgConnectExist().then(res => {
+//         if (!res.isWant()) {
+//             router.push('/connect')
+//             return
+//         } else {
+//             next()
+//         }
+//     })
+// })
 export default router

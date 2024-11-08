@@ -23,22 +23,22 @@ const servletFail = ref(true)
 
 const contextDynamicRouter = (key: string) => {
   hasContext.value = true
-  router.push({path: '/debug/' + key})
+  router.push({path: '/router/' + key})
 }
 const frameworkDynamicRouter = (key: string) => {
   hasFramework.value = true
-  router.push({path: '/debug/' + key})
+  router.push({path: '/router/' + key})
 }
 
 
 const setRouter = () => {
-  router.push({path: '/debug/setting'})
+  router.push({path: '/router/setting'})
 }
 const logRouter = () => {
-  router.push({path: '/debug/log'})
+  router.push({path: '/router/log'})
 }
 const stackRouter = () => {
-  router.push({path: '/debug/stack'})
+  router.push({path: '/router/stack'})
 }
 createDiscoveryWs((event) => {
   let {name, type} = JSON.parse(event.data)
@@ -107,7 +107,7 @@ getFrameworkType().then(res => {
           </el-menu-item>
         </el-menu>
       </el-sub-menu>
-      <el-menu-item @click="servletFail = true;router.push('/debug/servlet')" index="5">
+      <el-menu-item @click="servletFail = true;router.push('/router/servlet')" index="5">
         <template #title>
           <img :src="require('../../assets/servlet' + getTheme() + '.png')" alt="setting" class="nav_img"/>
           <span><el-badge :hidden="servletFail" value="new" class="item">Servlet失败记录</el-badge></span>

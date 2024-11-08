@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="router.server.mapper.FilterMapper">
+    <resultMap id="filterMapper" type="router.server.entity.FilterEntity">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="middleId" jdbcType="VARCHAR" property="middleId"/>
+        <result column="priority" jdbcType="INTEGER" property="priority"/>
+        <result column="classname" jdbcType="VARCHAR" property="classname"/>
+        <result column="url" jdbcType="VARCHAR" property="url"/>
+        <result column="mark" jdbcType="VARCHAR" property="mark"/>
+    </resultMap>
+    <!--创建表的 SQL 语句-->
+    <update id="initTable">
+        CREATE TABLE IF NOT EXISTS `filter`
+        (
+            `id` INTEGER PRIMARY KEY,
+            `middleId`  TEXT   NOT NULL,
+            `priority` INT NOT NULL,
+            `classname` TEXT NOT NULL,
+            `url` TEXT NOT NULL,
+            `mark` TEXT
+        );
+    </update>
+
+    <insert id="insertFilters" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        insert into filter(id, middleId,priority,classname,url,mark)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.id},#{item.middleId},#{item.priority},#{item.classname},#{item.url},#{item.mark})
+        </foreach>
+    </insert>
+
+    <select id="getFilterByMiddleId" resultMap="filterMapper">
+        select * from filter where middleId = #{middleId} LIMIT ${limit} OFFSET ${page}
+    </select>
+
+    <select id="selectFilterCountByMiddleId" resultType="INTEGER">
+        select count(*) from filter where middleId = #{middleId}
+
+    </select>
+
+</mapper>

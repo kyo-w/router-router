@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="router.server.mapper.ServletMapper">
+    <resultMap id="servletMapping" type="router.server.entity.ServletEntity">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="classname" jdbcType="VARCHAR" property="classname"/>
+        <result column="middleId" jdbcType="INTEGER" property="middleId"/>
+        <result column="urls" jdbcType="VARCHAR" property="urls"
+                typeHandler="router.server.handler.ListToStringHandler"/>
+        <result column="mark" jdbcType="VARCHAR" property="mark"/>
+    </resultMap>
+    <!--创建表的 SQL 语句-->
+    <update id="initTable">
+        CREATE TABLE IF NOT EXISTS `servlet`
+        (
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+            `classname` TEXT NOT NULL,
+            `middleId` INT NOT NULL,
+            `urls` TEXT NOT NULL,
+            `mark` TEXT
+        );
+    </update>
+    <insert id="insertServlets" parameterType="java.util.List" useGeneratedKeys="true" keyProperty="id">
+        insert into servlet(id, middleId,classname,urls,mark)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (#{item.id},#{item.middleId},#{item.classname},#{item.urls,jdbcType=VARCHAR, typeHandler=com.kyodream.debugger.handler.ListToStringHandler},#{item.mark})
+        </foreach>
+    </insert>
+
+    <select id="getAllServlet" resultMap="servletMapping">
+        select * from servlet
+    </select>
+    <select id="getServletByMiddlewareId" resultMap="servletMapping" parameterType="INTEGER">
+        select * from servlet where middleId = #{middleId} LIMIT ${limit} OFFSET ${page}
+    </select>
+
+    <select id="selectServletCountByMiddlewareId" resultType="INTEGER">
+        select count(*) from servlet where middleId = #{middleId}
+    </select>
+</mapper>
