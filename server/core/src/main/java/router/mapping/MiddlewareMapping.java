@@ -29,8 +29,8 @@ public class MiddlewareMapping {
 
     private List<FilterMapping> filtersMap;
 
-    private HashMap<String, ServletMapping> __serlvetCache = new HashMap<>();
-    private Integer __filterPos = 0;
+    private  HashMap<String, ServletMapping> __serlvetCache = new HashMap<>();
+    private static Integer __filterPos = 0;
 
 
     public MiddlewareType getType() {
@@ -93,7 +93,8 @@ public class MiddlewareMapping {
     public void recordServletMap(String classname, String url) {
         if (servletMap == null) servletMap = new ArrayList<>();
         if (!__serlvetCache.containsKey(classname)) {
-            ServletMapping servletMapping = new ServletMapping(classname, Collections.singletonList(url));
+            ServletMapping servletMapping = new ServletMapping(classname, new ArrayList<>());
+            servletMapping.addPath(url);
             __serlvetCache.put(classname, servletMapping);
             servletMap.add(servletMapping);
         } else {

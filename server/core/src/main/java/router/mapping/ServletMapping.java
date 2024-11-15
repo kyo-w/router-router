@@ -28,6 +28,8 @@ public class ServletMapping {
     }
 
     public void addPath(String path) {
-        this.path.add(path);
+        if (!this.path.contains(path)) {
+            this.path.add(path);
+        }
     }
 }

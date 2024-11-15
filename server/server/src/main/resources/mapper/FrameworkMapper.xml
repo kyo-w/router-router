@@ -7,7 +7,7 @@
     <update id="initTable">
         CREATE TABLE IF NOT EXISTS `framework`
         (
-            `id` INTEGER PRIMARY KEY,
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
             `projectId`  INT   NOT NULL,
             `type` TEXT NOT NULL,
             `contextPath` TEXT NOT NULL,
@@ -21,14 +21,14 @@
     </insert>
 
     <select id="selectTypeByProjectId" resultType="java.lang.String">
-        select type from framework where projectId = #{projectId}
+        select DISTINCT type from framework where projectId = #{projectId}
     </select>
 
     <select id="selectByProjectIdAndType" resultType="router.server.entity.FrameworkEntity">
-        select * from framework where projectId=#{projectId} and type in
-        <foreach collection="types" item="type" open="(" separator="," close=",">
-            #{type}
-        </foreach>
+        select * from framework where projectId=#{projectId} and type = #{type}
+    </select>
+    <select id="selectByProjectId" resultType="router.server.entity.FrameworkEntity">
+        select * from framework where projectId=#{projectId}
     </select>
 
 </mapper>

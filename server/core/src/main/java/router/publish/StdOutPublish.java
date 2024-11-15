@@ -1,14 +1,11 @@
 package router.publish;
 
-import router.mapping.MiddlewareMapping;
-import router.mapping.FrameworkMapping;
-
 public class StdOutPublish implements IPublish {
-    public void Event(EventType eventType, EventPackage eventPackage) {
-        System.out.println("Router Event[ " +eventType.toString() + " ]: "  + eventPackage.getMsg());
+    public void Event(Event event) {
+        System.out.println("Router Event[ " + event.toString() + " ]");
     }
 
-    public void Error(Exception msg) {
+    public void Error(Error msg) {
         System.out.println("Router Error Event: " + msg.toString());
     }
 }

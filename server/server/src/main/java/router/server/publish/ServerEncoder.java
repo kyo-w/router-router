@@ -21,9 +21,9 @@ public class ServerEncoder implements Encoder.Text<ProgressTask> {
     public void init(EndpointConfig arg0) {
     }
     @Override
-    public String encode(ProgressTask progressTask) throws EncodeException {
+    public String encode(ProgressTask result) throws EncodeException {
         try {
-            return jsonMapper.writeValueAsString(progressTask);
+            return jsonMapper.writeValueAsString(result);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

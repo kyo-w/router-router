@@ -19,18 +19,23 @@ public class ManagerController {
 
     @GetMapping("/testConnect")
     public ApiResponse connectTest() {
-        return projectService.checkProject((p)->
+        return projectService.checkProject((p) ->
                 connectService.testConnect(projectService.getCurrentProjectEntity()));
     }
 
     @PostMapping("/connect")
     public ApiResponse connectJVM() {
-        return projectService.checkProject((p)->
+        return projectService.checkProject((p) ->
                 connectService.connectJDWPWithProject(projectService.getCurrentProjectEntity()));
     }
 
     @DeleteMapping("/close")
     public ApiResponse deleteProject() {
-        return projectService.checkProject((p)->connectService.closeConnect());
+        return projectService.checkProject((p) -> connectService.closeConnect());
+    }
+
+    @GetMapping("/status")
+    public ApiResponse getConnectStatus() {
+        return projectService.checkProject(p -> connectService.statusConnect());
     }
 }

@@ -2,10 +2,7 @@ package router.mapping;
 
 import router.type.HandlerType;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 public class FrameworkMapping {
 
@@ -53,9 +50,10 @@ public class FrameworkMapping {
     }
 
     public void recordServletMap(String classname, String url) {
-        if (urlMap == null) urlMap = new LinkedList<>();
+        if (urlMap == null) urlMap = new ArrayList<>();
         if (!__serlvetCache.containsKey(classname)) {
-            ServletMapping servletMapping = new ServletMapping(classname, Collections.singletonList(url));
+            ServletMapping servletMapping = new ServletMapping(classname, new ArrayList<>());
+            servletMapping.addPath(url);
             __serlvetCache.put(classname, servletMapping);
             urlMap.add(servletMapping);
         } else {

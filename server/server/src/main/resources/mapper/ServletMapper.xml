@@ -25,7 +25,7 @@
         insert into servlet(id, middleId,classname,urls,mark)
         VALUES
         <foreach collection="list" item="item" index="index" separator=",">
-            (#{item.id},#{item.middleId},#{item.classname},#{item.urls,jdbcType=VARCHAR, typeHandler=com.kyodream.debugger.handler.ListToStringHandler},#{item.mark})
+            (#{item.id},#{item.middleId},#{item.classname},#{item.urls,jdbcType=VARCHAR, typeHandler=router.server.handler.ListToStringHandler},#{item.mark})
         </foreach>
     </insert>
 
@@ -39,4 +39,13 @@
     <select id="selectServletCountByMiddlewareId" resultType="INTEGER">
         select count(*) from servlet where middleId = #{middleId}
     </select>
+
+    <update id="mark">
+        update servlet
+        set mark = #{flag}
+        where id = #{id}
+    </update>
+    <delete id="deleteByMiddlewareId">
+        delete from servlet where middleId = #{middleId}
+    </delete>
 </mapper>

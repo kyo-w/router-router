@@ -1,14 +1,12 @@
 package router.server.controller;
 
-import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.*;
 import router.server.entity.ProjectEntity;
 import router.server.service.ProjectService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RestController;
 
-@RestController("/project")
+@RestController
+@RequestMapping("/project")
 public class ProjectController {
     @Autowired
     ProjectService projectService;
@@ -19,11 +17,13 @@ public class ProjectController {
     }
 
     @PostMapping("/creat")
-    public ApiResponse create(ProjectEntity project) {
-        return projectService.checkProject((p) -> {
-            projectService.saveProject(project);
-            return ApiResponse.Ok();
-        });
+    public ApiResponse create(@RequestBody ProjectEntity project) {
+        if (projectService.getProjectByName(project.getAlias()) != null) {
+            return ApiResponse.status400("项目已存在");
+        } else {
+            projectService.createProject(project);
+            return ApiResponse.status200("项目创建完成");
+        }
     }
 
 
@@ -36,5 +36,16 @@ public class ProjectController {
     public ApiResponse getCurrentProject() {
         ProjectEntity currentProjectEntity = projectService.getCurrentProjectEntity();
         return currentProjectEntity != null ? ApiResponse.status200(currentProjectEntity) : ApiResponse.Fail();
+    }
+
+    @PostMapping("/logout")
+    public ApiResponse logout() {
+        return projectService.logoutProject();
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ApiResponse deleteProject(@PathVariable Integer id) {
+        projectService.deleteProject(id);
+        return ApiResponse.Ok();
     }
 }

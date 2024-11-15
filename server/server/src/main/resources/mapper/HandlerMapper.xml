@@ -13,7 +13,7 @@
     <update id="initTable">
         CREATE TABLE IF NOT EXISTS `handler`
         (
-            `id` INTEGER PRIMARY KEY,
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
             `frameworkId`  INT   NOT NULL,
             `classname` TEXT NOT NULL,
             `urls` TEXT NOT NULL,
@@ -25,7 +25,7 @@
         insert into handler(id, frameworkId,classname,urls,mark)
         VALUES
         <foreach collection="list" item="item" index="index" separator=",">
-            (#{item.id},#{item.frameworkId},#{item.classname},#{item.urls,jdbcType=VARCHAR, typeHandler=com.kyodream.debugger.handler.ListToStringHandler},#{item.mark})
+            (#{item.id},#{item.frameworkId},#{item.classname},#{item.urls,jdbcType=VARCHAR, typeHandler=router.server.handler.ListToStringHandler},#{item.mark})
         </foreach>
     </insert>
 
@@ -36,4 +36,14 @@
     <select id="selectCountByFrameworkId" resultType="INTEGER">
         select count(*) from handler where frameworkId = #{frameworkId}
     </select>
+    <update id="mark">
+        update handler
+        set mark=#{flag}
+        where id =#{id}
+    </update>
+    <delete id="deleteByFrameworkId">
+        delete
+        from handler
+        where frameworkId = #{frameworkId}
+    </delete>
 </mapper>

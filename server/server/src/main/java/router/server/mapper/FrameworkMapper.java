@@ -8,6 +8,7 @@ import java.util.List;
 @Mapper
 public interface FrameworkMapper extends BaseMapper{
     List<String> selectTypeByProjectId(Integer projectId);
-    List<FrameworkEntity> selectByProjectIdAndType(Integer projectId, String... types);
+    List<FrameworkEntity> selectByProjectId(Integer projectId);
+    List<FrameworkEntity> selectByProjectIdAndType(Integer projectId, String type);
     int insertFramework(FrameworkEntity framework);
 }

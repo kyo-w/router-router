@@ -10,12 +10,12 @@ import router.handler.BreakPointHandler;
 import router.parse.UrlParse;
 import router.pipeline.FilterPipeLine;
 import router.pipeline.ServletPipeLine;
-import router.publish.EventPackage;
+import router.publish.EndEvent;
 import router.publish.EventType;
+import router.publish.StartEvent;
 import router.type.MiddlewareType;
 
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.Map;
 
 public class JettyMiddleware implements BreakPointHandler {
@@ -28,13 +28,14 @@ public class JettyMiddleware implements BreakPointHandler {
             setContextPath(jetty, thisObject);
             setVersion(thisObject, jetty);
             IAnalysts servletHandlerRef = thisObject.getObjFields("_servletHandler");
-            context.getPublish().Event(EventType.MiddlewareContextCount, new EventPackage(servletHandlerRef.getId(), 1));
+            context.getPublish().Event(new StartEvent(EventType.MiddlewareContextCount,
+                    servletHandlerRef.getId(), getHandlerName().name(), 1));
 
             setServletMapping(servletHandlerRef, jetty, context);
             setFilterMapping(servletHandlerRef, jetty, context);
             context.pushMiddleware(jetty);
-            context.getPublish().Event(EventType.MiddlewareContextAnalystsComplete,
-                    new EventPackage(servletHandlerRef.getId(), servletHandlerRef.toString()));
+            context.getPublish().Event(
+                    new EndEvent(EventType.MiddlewareContextAnalystsComplete, servletHandlerRef.getId(), "jetty完成分析"));
         } catch (Exception e) {
             throw MiddleWareError.JettyError(e.getMessage());
         }
@@ -47,7 +48,7 @@ public class JettyMiddleware implements BreakPointHandler {
 
     private void setFilterMapping(IAnalysts servletHandlerRef, MiddlewareMapping jetty, Context context) throws Exception {
         ArrayAnalysts filterArrayRef = new ArrayAnalysts(servletHandlerRef.getObjFields("_filterMappings"));
-        context.getPublish().Event(EventType.FilterCount, new EventPackage(filterArrayRef.getId(), filterArrayRef.size()));
+        context.getPublish().Event(new StartEvent(EventType.FilterCount, filterArrayRef.getId(), filterArrayRef.getClassName(), filterArrayRef.size()));
         for (IAnalysts filterMapRef : filterArrayRef) {
             String className = filterMapRef.getObjFields("_holder", "_className").convertToString();
             ArrayAnalysts pathsRef = new ArrayAnalysts(filterMapRef.getObjFields("_pathSpecs"));
@@ -57,7 +58,7 @@ public class JettyMiddleware implements BreakPointHandler {
                 UrlParse urlParse = UrlParse.getMiddlewareParse(jetty.getVirtualPath(), path);
                 FilterPipeLine.doFilter(urlParse, instance, context);
                 jetty.recordFilterMap(new FilterMapping(className, UrlParse.concatSubPath(jetty.getVirtualPath(), path)));
-                context.getPublish().Event(EventType.FilterAnalystsComplete, new EventPackage(filterArrayRef.getId(), className));
+                context.getPublish().Event(new EndEvent(EventType.FilterAnalystsComplete, filterArrayRef.getId(), className));
             }
         }
     }
@@ -75,7 +76,7 @@ public class JettyMiddleware implements BreakPointHandler {
     private void setServletMapping(IAnalysts servletHandlerRef, MiddlewareMapping jetty, Context context) throws Exception {
         ArrayAnalysts servletsRef = new ArrayAnalysts(servletHandlerRef.getObjFields("_servlets"));
         HashMap<UrlParse, String> servletMappings = getAliasHashMap(jetty, servletHandlerRef.getObjFields("_servletMappings"));
-        context.getPublish().Event(EventType.ServletCount, new EventPackage(servletsRef.getId(), servletsRef.size()));
+        context.getPublish().Event(new StartEvent(EventType.ServletCount, servletsRef.getId(), servletsRef.getClassName(), servletsRef.size()));
         for (IAnalysts servletHolderRef : servletsRef) {
             String alias = servletHolderRef.getStrFields("_name");
             String className = servletHolderRef.getStrFields("_className");
@@ -92,7 +93,7 @@ public class JettyMiddleware implements BreakPointHandler {
                     ServletPipeLine.handlerServlet(urlParse, wrappedServletRef, attributesRef, context);
                 }
                 jetty.recordServletMap(className, urlParse.getPath());
-                context.getPublish().Event(EventType.ServletAnalystsComplete, new EventPackage(servletsRef.getId(), className));
+                context.getPublish().Event(new EndEvent(EventType.ServletAnalystsComplete, servletsRef.getId(), className));
             }
         }
     }

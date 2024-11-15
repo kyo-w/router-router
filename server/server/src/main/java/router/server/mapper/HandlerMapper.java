@@ -8,6 +8,12 @@ import java.util.List;
 @Mapper
 public interface HandlerMapper extends BaseMapper {
     void insertHandler(List<HandlerEntity> handlerList);
+
     List<HandlerEntity> selectAllByFrameworkId(Integer frameworkId, Integer page, Integer limit);
+
     int selectCountByFrameworkId(Integer frameworkId);
+
+    void mark(boolean flag, Integer id);
+
+    void deleteByFrameworkId(Integer frameworkId);
 }

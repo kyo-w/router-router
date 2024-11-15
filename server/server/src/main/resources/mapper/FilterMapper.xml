@@ -14,7 +14,7 @@
     <update id="initTable">
         CREATE TABLE IF NOT EXISTS `filter`
         (
-            `id` INTEGER PRIMARY KEY,
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
             `middleId`  TEXT   NOT NULL,
             `priority` INT NOT NULL,
             `classname` TEXT NOT NULL,
@@ -39,5 +39,7 @@
         select count(*) from filter where middleId = #{middleId}
 
     </select>
-
+    <delete id="deleteByMiddlewareId">
+        delete from filter where middleId = #{middleId}
+    </delete>
 </mapper>

@@ -10,5 +10,7 @@ public interface ProjectMapper extends BaseMapper {
     List<ProjectEntity> getAllProjectList();
     ProjectEntity getProjectByName(String alias);
     ProjectEntity getProjectById(Integer id);
+    void deleteProjectById(Integer id);
     void saveProject(ProjectEntity project);
+    void completeProject(boolean complete, Integer id);
 }

@@ -7,28 +7,12 @@
     <update id="initTable">
         CREATE TABLE IF NOT EXISTS `middleware`
         (
-            `id`
-            INTEGER
-            PRIMARY
-            KEY,
-            `projectId`
-            INTEGER
-            NOT
-            NULL
-            `type`
-            TEXT
-            NOT
-            NULL,
-            `virtualPath`
-            TEXT
-            NOT
-            NULL,
-            `physicalPath`
-            TEXT
-            NOT
-            NULL,
-            `version`
-            TEXT
+            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
+            `projectId` INTEGER NOT NULL,
+            `type` TEXT NOT NULL,
+            `virtualPath` TEXT NOT NULL,
+            `physicalPath` TEXT NOT NULL,
+            `version` TEXT
         );
     </update>
 
@@ -38,15 +22,20 @@
         VALUES (#{id}, #{projectId}, #{type}, #{virtualPath}, #{physicalPath}, #{version})
     </insert>
     <select id="selectTypeByProjectId" resultType="java.lang.String">
-        select type
+        select DISTINCT  type
         from middleware where projectId = #{projectId}
     </select>
 
-    <select id="selectByProjectIdAndType" resultType="router.server.entity.MiddlewareEntity">
-        select * from middleware where projectId = #{projectId} and type IN
-        <foreach collection="types" item="type" open="(" separator="," close=")">
-            #{type}
-        </foreach>
+    <select id="selectByProjectId" resultType="router.server.entity.MiddlewareEntity">
+        select * from middleware where projectId = #{projectId}
     </select>
+
+    <select id="selectByProjectIdAndType" resultType="router.server.entity.MiddlewareEntity">
+        select * from middleware where projectId = #{projectId} and type  = #{type}
+    </select>
+
+    <delete id="deleteMiddlewareByProjectId">
+        delete from middleware where projectId = #{projectId}
+    </delete>
 
 </mapper>

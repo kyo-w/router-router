@@ -1,5 +1,6 @@
 package router.context;
 
+import router.analysts.IAnalysts;
 import router.mapping.FilterMapping;
 import router.mapping.FrameworkMapping;
 import router.mapping.MiddlewareMapping;
@@ -19,6 +20,7 @@ public class CacheContext implements Context {
     public List<FrameworkMapping> frameworkCache;
     public HashMap<String, ServletMapping> servletCache;
     public LinkedList<FilterMapping> filterCache;
+    public HashMap<Long, IAnalysts> analystCache;
     public IPublish publish;
 
     public static CacheContext build(IPublish publish) {
@@ -27,6 +29,7 @@ public class CacheContext implements Context {
         cacheContext.middlewareCache = new ArrayList<>();
         cacheContext.frameworkCache = new ArrayList<>();
         cacheContext.servletCache = new HashMap<>();
+        cacheContext.analystCache = new HashMap<>();
         cacheContext.publish = publish;
         return cacheContext;
     }
@@ -43,7 +46,20 @@ public class CacheContext implements Context {
     }
 
     @Override
+    public void completeTask(){}
+
+    @Override
     public IPublish getPublish() {
         return publish;
+    }
+
+    @Override
+    public void pushAnalysts(IAnalysts analysts) {
+        analystCache.put(analysts.getId(), analysts);
+    }
+
+    @Override
+    public IAnalysts getAnalystsByUniqId(Long id) {
+        return analystCache.get(id);
     }
 }

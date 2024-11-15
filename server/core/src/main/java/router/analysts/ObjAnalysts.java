@@ -74,7 +74,7 @@ public class ObjAnalysts implements IAnalysts {
     }
 
     public boolean isObjRef() {
-        return objValue == null;
+        return objValue != null;
     }
 
     public IAnalysts getObjFields(String... field) throws FieldExcept {
@@ -133,7 +133,10 @@ public class ObjAnalysts implements IAnalysts {
         if (object.getRawValue() instanceof StringReference) {
             return ((StringReference) object.getRawValue()).value();
         }
-        throw new FieldExcept("Field " + fieldNames[fieldNames.length - 1] + " is not a StringReference");
+        if (!object.isObjRef()) {
+            throw new FieldExcept("Field [" + fieldNames[fieldNames.length - 1] + "] is not object reference");
+        }
+        throw new FieldExcept("Field " + fieldNames[fieldNames.length - 1] + " is not a StringReference(raw type: " + object.getRawValue().type().name() + ")");
     }
 
     @Override
@@ -243,7 +246,7 @@ public class ObjAnalysts implements IAnalysts {
         return threadObject.invokeMethod("getContextClassLoader");
     }
 
-    public Long getId(){
+    public Long getId() {
         return objValue.uniqueID();
     }
 

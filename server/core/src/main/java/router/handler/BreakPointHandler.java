@@ -8,20 +8,18 @@ import router.analysts.IAnalysts;
 import router.analysts.ObjAnalysts;
 import router.context.Context;
 import router.except.MiddleWareError;
-import router.publish.EventPackage;
-import router.publish.EventType;
+import router.publish.*;
+import router.publish.Error;
 import router.type.MiddlewareType;
 
 public interface BreakPointHandler {
     default void handler(BreakpointEvent breakpointEvent, ThreadReference thread, Context context) {
         if (breakpointEvent.thread().isSuspended()) {
+            IAnalysts thisObject = getThisObject(thread);
             try {
-                IAnalysts thisObject = getThisObject(thread);
-                context.getPublish().Event(EventType.BreakPointStart, new EventPackage(thisObject.getId(), 1));
                 handlerTarget(thisObject, context);
-                context.getPublish().Event(EventType.BreakPointEnd, new EventPackage(thisObject.getId(), getHandlerName()));
             } catch (Exception e) {
-                context.getPublish().Error(e);
+                e.printStackTrace();
             }
         }
     }
@@ -37,11 +35,11 @@ public interface BreakPointHandler {
      */
     void handlerTarget(IAnalysts thisObject, Context context) throws MiddleWareError;
 
-    default IAnalysts getThisObject(ThreadReference ref) throws Exception {
+    default IAnalysts getThisObject(ThreadReference ref) {
         try {
             return ObjAnalysts.parseObject(ref, ref.frame(0).thisObject());
         } catch (IncompatibleThreadStateException e) {
-            throw new Exception("can't get object from thread!");
+            throw new RuntimeException(e);
         }
     }
 

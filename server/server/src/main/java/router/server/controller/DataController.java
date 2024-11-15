@@ -4,13 +4,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 import router.server.context.DatabaseContext;
 import router.server.mapper.FilterMapper;
+import router.server.mapper.HandlerMapper;
 import router.server.mapper.MiddlewareMapper;
-import router.server.mapper.ProjectMapper;
+import router.server.mapper.ServletMapper;
 import router.server.service.ProjectService;
 import router.type.HandlerType;
 import router.type.MiddlewareType;
-
-import java.util.*;
 
 /**
  * 数据获取类
@@ -31,6 +30,11 @@ public class DataController {
     @Autowired
     ProjectService projectService;
 
+    @Autowired
+    ServletMapper servletMapper;
+    @Autowired
+    HandlerMapper handlerMapper;
+
     @GetMapping("/middleware/getall")
     public ApiResponse getAllMiddlewares() {
         return projectService.checkProject((p) ->
@@ -41,7 +45,7 @@ public class DataController {
     @GetMapping("/middleware/{target}/panel")
     public ApiResponse getSpecifiedMiddleware(@PathVariable("target") MiddlewareType type) {
         return projectService.checkProject(p ->
-                ApiResponse.status200(context.getMiddlewarePanelByType(p.getId(), new MiddlewareType[]{type})));
+                ApiResponse.status200(context.getMiddlewarePanelByType(p.getId(), type)));
     }
 
     @GetMapping("/middleware/{middleid}/filter")
@@ -79,7 +83,7 @@ public class DataController {
     @GetMapping("/framework/{target}/panel")
     public ApiResponse getSpecifiedFrameworkPanel(@PathVariable("target") HandlerType type) {
         return projectService.checkProject(p ->
-                ApiResponse.status200(context.getSpecifiedFrameworkPanel(p.getId(), new HandlerType[]{type})));
+                ApiResponse.status200(context.getSpecifiedFrameworkPanel(p.getId(), type)));
     }
 
     @GetMapping("/framework/{frameworkid}/handlerMap")
@@ -93,5 +97,21 @@ public class DataController {
     public ApiResponse getSpecifiedFrameworkHandlerMapCount(@PathVariable("frameworkid") Integer frameworkId) {
         return projectService.checkProject(p ->
                 ApiResponse.status200(context.getFrameworkHandlerCount(frameworkId)));
+    }
+
+    @PostMapping("/middleware/mark")
+    public ApiResponse markMiddleware(@RequestParam("id") Integer id, @RequestParam("flag") boolean flag) {
+        return projectService.checkProject(p -> {
+            servletMapper.mark(flag, id);
+            return ApiResponse.Ok();
+        });
+    }
+
+    @PostMapping("/framework/mark")
+    public ApiResponse markFramework(@RequestParam("id") Integer id, @RequestParam("flag") boolean flag) {
+        return projectService.checkProject(p -> {
+            handlerMapper.mark(flag, id);
+            return ApiResponse.Ok();
+        });
     }
 }

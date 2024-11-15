@@ -11,4 +11,7 @@ public interface ServletMapper extends BaseMapper{
     List<ServletEntity> getAllServlet();
     List<ServletEntity> getServletByMiddlewareId(Integer middleId, Integer page, Integer limit);
     Integer selectServletCountByMiddlewareId(Integer middleId);
+    void mark(boolean flag, Integer id);
+
+    void deleteByMiddlewareId(Integer middleId);
 }

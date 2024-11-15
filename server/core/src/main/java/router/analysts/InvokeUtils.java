@@ -54,6 +54,9 @@ public class InvokeUtils {
         try {
             field = value.referenceType().fieldByName(fieldString);
         } catch (Exception e) {
+            for (Field allField : value.referenceType().allFields()) {
+                System.out.println(allField.name());
+            }
             throw new FieldExcept(value, fieldString);
         }
         return value.getValue(field);

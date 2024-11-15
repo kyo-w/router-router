@@ -6,26 +6,59 @@
     <select id="initTable">
         CREATE TABLE IF NOT EXISTS `project`
         (
-            `id` INTEGER PRIMARY KEY AUTOINCREMENT,
-            `alias` TEXT NOT NULL,
-            `hostname` TEXT NOT NULL,
-            `port` TEXT NOT NULL,
-            `createTime` DATE
+            `id`
+            INTEGER
+            PRIMARY
+            KEY
+            AUTOINCREMENT,
+            `alias`
+            TEXT
+            NOT
+            NULL,
+            `hostname`
+            TEXT
+            NOT
+            NULL,
+            `port`
+            TEXT
+            NOT
+            NULL,
+            `complete`
+            TEXT
+            NOT
+            NULL,
+            `createTime`
+            DATE
         );
     </select>
     <select id="getAllProjectList" resultType="router.server.entity.ProjectEntity">
-       select * from project
+        select *
+        from project
     </select>
     <select id="getProjectByName" parameterType="String" resultType="router.server.entity.ProjectEntity">
-        select * from project where alias = #{alias}
+        select *
+        from project
+        where alias = #{alias}
     </select>
 
     <select id="getProjectById" parameterType="Integer" resultType="router.server.entity.ProjectEntity">
-        select * from project where id = #{id}
+        select *
+        from project
+        where id = #{id}
     </select>
 
-    <insert id="saveProject" parameterType="router.server.entity.ProjectEntity" keyProperty="id" useGeneratedKeys="true">
-        INSERT INTO project(id, alias, hostname, port, createTime)
-        VALUES (#{id}, #{alias}, #{hostname}, #{port}, #{createTime})
+    <insert id="saveProject" parameterType="router.server.entity.ProjectEntity" keyProperty="id"
+            useGeneratedKeys="true">
+        INSERT INTO project(id, alias, hostname, port, complete, createTime)
+        VALUES (#{id}, #{alias}, #{hostname}, #{port}, #{complete}, #{createTime})
     </insert>
+    <delete id="deleteProjectById">
+        DELETE
+        from project
+        WHERE id = #{id}
+    </delete>
+
+    <update id="completeProject" parameterType="Integer">
+        UPDATE project set complete=#{complete} where id=#{id}
+    </update>
 </mapper>

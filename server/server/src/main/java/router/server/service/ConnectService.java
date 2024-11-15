@@ -36,7 +36,7 @@ public class ConnectService {
         Map<String, Connector.Argument> argMap = connector.defaultArguments();
         argMap.get("hostname").setValue(hostname);
         argMap.get("port").setValue(port);
-        argMap.get("timeout").setValue("5000");
+        argMap.get("timeout").setValue("3000");
         return connector.attach(argMap);
     }
 
@@ -72,5 +72,9 @@ public class ConnectService {
         closeJDWP(currentVirtualMachine);
         currentVirtualMachine = null;
         return ApiResponse.Ok();
+    }
+
+    public ApiResponse statusConnect() {
+        return currentVirtualMachine != null ? ApiResponse.status200("连接已建立") : ApiResponse.status400("未建立连接");
     }
 }

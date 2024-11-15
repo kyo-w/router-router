@@ -9,6 +9,8 @@ public enum EventType {
     FilterAnalystsComplete,
     ServletCount,
     ServletAnalystsComplete,
+    FrameworkContextCount,
+    FrameworkContextAnalystsComplete,
     Jersey1FrameworkCount,
     Jersey1FrameworkAnalystsComplete,
     Jersey2FrameworkCount,

@@ -16,6 +16,8 @@ public class TaskService {
     ConnectService connectService;
     @Autowired
     DatabaseContext databaseContext;
+    @Autowired
+    ProgressService progressService;
 
 
     public ApiResponse startAnalysts(VirtualMachine vm) {
@@ -36,6 +38,12 @@ public class TaskService {
             debugThread.stopTask();
             debugThread = null;
         }
+        progressService.clearProgress();
         return ApiResponse.Ok();
     }
+
+    public ApiResponse statusAnalysts() {
+        return debugThread != null ? ApiResponse.status200("已存在任务") : ApiResponse.status400("无任务");
+    }
+
 }

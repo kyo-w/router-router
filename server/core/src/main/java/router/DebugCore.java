@@ -58,6 +58,8 @@ public class DebugCore implements Runnable {
                 if (event instanceof BreakpointEvent) {
                     BreakPointHandler handler = (BreakPointHandler) event.request().getProperty("handler");
                     handler.handler((BreakpointEvent) event, ((BreakpointEvent) event).thread(), context);
+                    context.completeTask();
+                    vm.eventRequestManager().deleteAllBreakpoints();
                     vm.resume();
                 }
             }

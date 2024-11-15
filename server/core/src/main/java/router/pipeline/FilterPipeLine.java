@@ -6,7 +6,7 @@ import router.handler.Struts2Handler;
 import router.parse.UrlParse;
 
 public class FilterPipeLine {
-    public static boolean doFilter(UrlParse urlParse, IAnalysts filterRef, Context context)throws Exception {
+    public static boolean doFilter(UrlParse urlParse, IAnalysts filterRef, Context context) {
         if (filterRef.isInstanceof("org.apache.struts2.dispatcher.ng.filter.StrutsPrepareAndExecuteFilter") ||
                 filterRef.isInstanceof("org.apache.struts2.dispatcher.filter.StrutsPrepareAndExecuteFilter") ||
                 filterRef.isInstanceof("org.apache.struts2.dispatcher.FilterDispatcher")) {

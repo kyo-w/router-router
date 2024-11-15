@@ -10,4 +10,6 @@ public interface FilterMapper extends BaseMapper{
     int insertFilters(List<FilterEntity> filterEntities);
     List<FilterEntity> getFilterByMiddleId(Integer middleId, Integer page, Integer limit);
     Integer selectFilterCountByMiddleId(Integer middleId);
+
+    void deleteByMiddlewareId(Integer middleId);
 }

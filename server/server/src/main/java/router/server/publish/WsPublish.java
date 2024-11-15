@@ -2,9 +2,8 @@ package router.server.publish;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-import router.publish.EventPackage;
-import router.publish.EventType;
-import router.publish.IPublish;
+import router.publish.*;
+import router.publish.Error;
 import router.server.service.ProgressService;
 
 import javax.websocket.EncodeException;
@@ -13,8 +12,8 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.HashSet;
+import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,28 +23,39 @@ public class WsPublish implements IPublish {
     @Autowired
     ProgressService progressService;
 
-    private static final HashMap<Class<?>, CopyOnWriteArraySet<Session>> sessionMap = new HashMap<>();
+    private static final HashSet<Session> sessionMap = new HashSet<>();
     protected ExecutorService executorService = Executors.newFixedThreadPool(10);
 
     @OnOpen
     public void onOpen(Session session) {
-        CopyOnWriteArraySet<Session> sessions = sessionMap.computeIfAbsent(this.getClass(), k -> new CopyOnWriteArraySet<>());
-        sessions.add(session);
+        sessionMap.add(session);
     }
 
     @OnClose
     public void close(Session session) {
-        if (sessionMap.get(this.getClass()) != null) {
-            sessionMap.get(this.getClass()).remove(session);
-        }
+        sessionMap.remove(session);
     }
 
+    public void sendObject(Object obj) {
+        for (Session session : sessionMap) {
+            if (session.isOpen()) {
+                synchronized (session) {
+                    try {
+                        session.getBasicRemote().sendObject(obj);
+                    } catch (IOException | EncodeException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        }
+
+    }
 
     @Override
-    public void Event(EventType eventType, EventPackage eventPackage) {
+    public void Event(Event event) {
         executorService.execute(() -> {
             ProgressTask result = null;
-            switch (eventType) {
+            switch (event.getType()) {
                 case BreakPointStart:
                 case MiddlewareContextCount:
                 case FilterCount:
@@ -55,7 +65,7 @@ public class WsPublish implements IPublish {
                 case SpringFrameworkCount:
                 case Struts1FrameworkCount:
                 case Struts2FrameworkCount:
-                    result = progressService.registryTask(eventType, eventPackage);
+                    result = progressService.registryTask((StartEvent) event);
                     break;
                 case MiddlewareContextAnalystsComplete:
                 case FilterAnalystsComplete:
@@ -66,25 +76,21 @@ public class WsPublish implements IPublish {
                 case Struts1FrameworkAnalystsComplete:
                 case Struts2FrameworkAnalystsComplete:
                 case BreakPointEnd:
-                    result = progressService.updateTask(eventType, eventPackage);
+                    result = progressService.updateTask((EndEvent) event);
                     break;
             }
-            for (Session session : sessionMap.get(this.getClass())) {
-                if (session.isOpen()) {
-                    synchronized (session) {
-                        try {
-                            session.getBasicRemote().sendObject(result);
-                        } catch (IOException | EncodeException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
+            if (result == null) {
+                return;
             }
+            sendObject(result);
         });
     }
 
     @Override
-    public void Error(Exception msg) {
-
+    public void Error(Error error) {
+        executorService.execute(() -> {
+            ProgressTask progressTask = progressService.handlerErrorTask((ErrorEvent) error);
+            sendObject(progressTask);
+        });
     }
 }
