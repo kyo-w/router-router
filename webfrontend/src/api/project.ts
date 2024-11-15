@@ -12,10 +12,10 @@ export class Project {
 
     constructor(response: any) {
         this.id = response !== null ? response.id : ""
-        this.hostname = response !== null ? response.hostname: ""
+        this.hostname = response !== null ? response.hostname : ""
         this.port = response !== null ? response.port : -1
         this.name = response !== null ? response.alias : ""
-        this.createTime = response !== null ? response.Date : new Date()
+        this.createTime = response !== null ? response.createTime : new Date()
         this.empty = response === null
     }
 
@@ -70,5 +70,21 @@ export function apiLogoutProject() {
     return routerRequest({
         url: '/project/logout',
         method: 'post',
+    })
+}
+
+export function apiGetCurrentProject(): Promise<Project> {
+    return routerRequest({
+        url: '/project/current',
+        method: 'GET',
+    }).then(routerResponse => {
+        return new Promise<Project>(resolve => resolve(new Project(routerResponse.msg)))
+    })
+}
+
+export function apiDeleteProject(id: string) {
+    return routerRequest({
+        url: '/project/delete/' + id,
+        method: 'DELETE'
     })
 }

@@ -1,4 +1,4 @@
-# debuger-view
+# webfrontend
 
 ## Project setup
 ```
