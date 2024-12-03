@@ -42,7 +42,7 @@
               虚拟路径
             </div>
           </template>
-          {{ props.middleList[index].virtualPath === '' ? '/' : props.middleList[index].virtualPath}}
+          {{ props.middleList[index].virtualPath === '' ? '/' : props.middleList[index].virtualPath }}
         </el-descriptions-item>
       </div>
     </el-descriptions>
@@ -69,6 +69,8 @@ const mode = ref<'router' | 'filter'>('router')
 const index = ref<number>(0)
 const middleDataLen = ref<number>(0)
 const infoShow = ref<Boolean>(true)
+const page = ref<number>(1)
+
 const props = defineProps({
   middleList: {
     type: Object as () => Middleware[],

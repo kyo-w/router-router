@@ -21,6 +21,7 @@
       <el-table-column prop="url" label="url"/>
     </el-table>
     <el-pagination layout="prev, pager, next" :total="props.dataLen"
+                   v-model:current-page.sync="page"
                    @current-change="handlerCurrentChange"
     />
   </div>
@@ -41,11 +42,11 @@ const props = defineProps({
     default: -1
   },
   dataLen: Number,
-  show: Boolean
+  show: Boolean,
 })
 const servletData = ref<Servlet[]>([])
 const filterData = ref<Filter[]>([])
-
+const page = ref<Number>()
 const tableRowClassName = ({row, rowIndex}: { row: Servlet, rowIndex: number }) => {
   if (row.mark) {
     return 'warning-row'
@@ -58,9 +59,14 @@ const handlerMark = (servlet: Servlet) => {
   apiServletMark(servlet.id, servlet.mark)
 }
 const handlerCurrentChange = (currentPosition: number) => {
+  page.value = currentPosition
   props.mode === 'router' ?
-      apiGetSpecifiedMiddlewareUrlMap(props.middleId, (currentPosition - 1) * 10).then(res => servletData.value = res) :
-      apiGetSpecifiedMiddlewareFilter(props.middleId, (currentPosition - 1) * 10).then(res => filterData.value = res)
+      apiGetSpecifiedMiddlewareUrlMap(props.middleId, (currentPosition - 1) * 10).then(res => {
+        servletData.value = res
+      }) :
+      apiGetSpecifiedMiddlewareFilter(props.middleId, (currentPosition - 1) * 10).then(res => {
+        filterData.value = res
+      })
 }
 // 默认显示第一页
 handlerCurrentChange(1)

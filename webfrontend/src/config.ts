@@ -1,4 +1,4 @@
-const Debug = false
+const Debug = true
 export function GetBaseUrl() {
     if (Debug) {
         return "127.0.0.1:9090"

@@ -15,6 +15,7 @@
       </el-table-column>
     </el-table>
     <el-pagination layout="prev, pager, next" :total="props.dataLen"
+                   v-model:current-page.sync="page"
                    @current-change="handlerCurrentChange"
     />
   </div>
@@ -38,6 +39,7 @@ const props = defineProps({
   show: Boolean
 })
 
+const page = ref<Number>(1)
 const handlerData = ref<Handler[]>([])
 
 const tableRowClassName = ({row, rowIndex}: { row: Handler, rowIndex: number }) => {
@@ -48,6 +50,7 @@ const tableRowClassName = ({row, rowIndex}: { row: Handler, rowIndex: number }) 
 }
 
 const handlerCurrentChange = (currentPosition: number) => {
+  page.value = currentPosition
   apiGetSpecifiedFrameworkUrlMap(props.frameworkId, (currentPosition - 1) * 10).then(res => handlerData.value = res)
 }
 handlerCurrentChange(1)

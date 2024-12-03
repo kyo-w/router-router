@@ -58,7 +58,7 @@
         WHERE id = #{id}
     </delete>
 
-    <update id="completeProject" parameterType="Integer">
+    <update id="completeProject">
         UPDATE project set complete=#{complete} where id=#{id}
     </update>
 </mapper>
