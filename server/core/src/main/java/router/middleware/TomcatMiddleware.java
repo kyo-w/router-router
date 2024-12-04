@@ -85,8 +85,8 @@ public class TomcatMiddleware implements BreakPointHandler {
         } catch (Exception e) {
             throw new MiddleWareError("无法获取servlet上下文");
         }
-//        recordMapper(UrlType.DEFAULT, defaultWrapperRef, classLoader, middlewareMapping, context);
-//        recordMapper(UrlType.EXACT, exactWrappersRef, classLoader, middlewareMapping, context);
+        recordMapper(UrlType.DEFAULT, defaultWrapperRef, classLoader, middlewareMapping, context);
+        recordMapper(UrlType.EXACT, exactWrappersRef, classLoader, middlewareMapping, context);
         recordMapper(UrlType.WILD, wildcardWrappersRef, classLoader, middlewareMapping, context);
         recordMapper(UrlType.EXT, extensionWrappersRef, classLoader, middlewareMapping, context);
     }
