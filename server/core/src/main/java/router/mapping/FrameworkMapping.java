@@ -16,13 +16,20 @@ public class FrameworkMapping {
 
     private HashMap<String, ServletMapping> __serlvetCache = new HashMap<>();
 
+    public FrameworkMapping() {
+        urlMap = new ArrayList<>();
+        version = "UNKNOWN";
+    }
+
 
     public String getVersion() {
         return version;
     }
 
     public void setVersion(String version) {
-        this.version = version;
+        if (version != null) {
+            this.version = version;
+        }
     }
 
     public HandlerType getType() {

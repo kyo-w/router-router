@@ -29,8 +29,14 @@ public class MiddlewareMapping {
 
     private List<FilterMapping> filtersMap;
 
-    private  HashMap<String, ServletMapping> __serlvetCache = new HashMap<>();
+    private HashMap<String, ServletMapping> __serlvetCache = new HashMap<>();
     private static Integer __filterPos = 0;
+
+    public MiddlewareMapping() {
+        version = "UNKNOWN";
+        servletMap = new ArrayList<>();
+        filtersMap = new ArrayList<>();
+    }
 
 
     public MiddlewareType getType() {
@@ -86,7 +92,9 @@ public class MiddlewareMapping {
     }
 
     public void setVersion(String version) {
-        this.version = version;
+        if (version != null) {
+            this.version = version;
+        }
     }
 
 

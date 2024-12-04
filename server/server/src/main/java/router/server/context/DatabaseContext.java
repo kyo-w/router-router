@@ -99,7 +99,9 @@ public class DatabaseContext implements Context {
             servletEntity.setMark(false);
             return servletEntity;
         }).collect(Collectors.toList());
-        servletMapper.insertServlets(servlets);
+        if(!servlets.isEmpty()){
+            servletMapper.insertServlets(servlets);
+        }
         List<FilterEntity> filters = middleware.getFilterMap().stream().map(f -> {
             FilterEntity filterEntity = new FilterEntity();
             filterEntity.setUrl(f.getUrlPath());
@@ -109,7 +111,9 @@ public class DatabaseContext implements Context {
             filterEntity.setMiddleId(middlewareEntity.getId());
             return filterEntity;
         }).collect(Collectors.toList());
-        filterMapper.insertFilters(filters);
+        if(!filters.isEmpty()){
+            filterMapper.insertFilters(filters);
+        }
     }
 
     @Override
@@ -119,7 +123,11 @@ public class DatabaseContext implements Context {
         frameworkEntity.setVersion(framework.getVersion());
         frameworkEntity.setType(framework.getType().toString());
         frameworkEntity.setContextPath(framework.getContextPath());
-        frameworkMapper.insertFramework(frameworkEntity);
+        try {
+            frameworkMapper.insertFramework(frameworkEntity);
+        }catch (Exception e){
+            e.printStackTrace();
+        }
         List<HandlerEntity> urlMap = framework.getUrlMap().stream().map(e -> {
             HandlerEntity handlerEntity = new HandlerEntity();
             handlerEntity.setFrameworkId(frameworkEntity.getId());
@@ -128,7 +136,9 @@ public class DatabaseContext implements Context {
             handlerEntity.setMark(false);
             return handlerEntity;
         }).collect(Collectors.toList());
-        handlerMapper.insertHandler(urlMap);
+        if(!urlMap.isEmpty()){
+            handlerMapper.insertHandler(urlMap);
+        }
     }
 
     @Override

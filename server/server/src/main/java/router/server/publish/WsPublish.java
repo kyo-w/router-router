@@ -89,6 +89,7 @@ public class WsPublish implements IPublish {
     @Override
     public void Error(Error error) {
         executorService.execute(() -> {
+            ((ErrorEvent)error).getException().printStackTrace();
             ProgressTask progressTask = progressService.handlerErrorTask((ErrorEvent) error);
             sendObject(progressTask);
         });
